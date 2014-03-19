@@ -13,7 +13,6 @@ if onPi():
 
 
 config = yaml.load(open("config.yaml", 'r'))
-print(config)
 bus_stops = []
 for busName, info in config["stops"].items():
   stop = BusStop(busName, info["stop"], info["distance"], info["redPin"], info["greenPin"])

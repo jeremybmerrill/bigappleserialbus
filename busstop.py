@@ -62,7 +62,6 @@ class BusStop:
     response = urllib2.urlopen(requestUrl)
     jsonresp = response.read()
     resp = json.loads(jsonresp)
-    print(resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"])
     return resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"]
 
   # def get_distance(self, activity):
