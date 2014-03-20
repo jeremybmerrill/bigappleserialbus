@@ -60,19 +60,19 @@ class BusStop:
       if seconds_away < self.too_late_to_catch_the_bus:
         # too close, won't make it.
         print(fail_notice + "bus %(name)s is %(dist)fm away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
-          {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away, 'now': str(datetime.datetime.now().time())[0:8]
+          {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away, 'now': str(datetime.now().time())[0:8]
 })
         continue
       if seconds_away < self.time_to_go:
         turn_on_red_pin = True
         print(red_notice + "bus %(name)s is %(dist)fm away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
-          {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away, 'now': str(datetime.datetime.now().time())[0:8]
+          {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away, 'now': str(datetime.now().time())[0:8]
 })
         continue # if a bus is within Time_to_go, it's necessarily within Time_to_get_ready, but I don't 
                  # want it to trip the green pin too
       if seconds_away < self.time_to_get_ready:
         print(green_notice + "bus %(name)s is %(dist)fm away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
-          {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away, 'now': str(datetime.datetime.now().time())[0:8]
+          {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away, 'now': str(datetime.now().time())[0:8]
 })
         turn_on_green_pin = True
                  # but if a second bus is close, I do want the green to go
