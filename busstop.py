@@ -10,11 +10,12 @@ default_bus_speed = 5 # m/s ~= 11 miles per hour
 
 greencode = '\033[92m'
 redcode = '\033[91m'
+yellowcode = '\033[93m'
 endcolor = '\033[0m'
 
 green_notice = greencode + "[green]" + endcolor + " "
 red_notice = redcode + "[red]" + endcolor + " "
-
+fail_notice = yellowcode + "[FAIL]" + endcolor + " "
 mta_key = open("apikey.txt", 'r').read().strip()
 
 class BusStop:
@@ -56,19 +57,23 @@ class BusStop:
       speed = bus.get_speed()
       mph = bus.get_speed_mph()
 
-
       if seconds_away < self.too_late_to_catch_the_bus:
         # too close, won't make it.
+        print(fail_notice + "bus %(name)s is %(dist)fm away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
+          {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away, 'now': str(datetime.datetime.now().time())[0:8]
+})
         continue
       if seconds_away < self.time_to_go:
         turn_on_red_pin = True
-        print(red_notice + "bus %(name)s is %(dist)fm away, traveling at %(speed)f mph; computed to be %(mins)s away" % 
-          {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away})
+        print(red_notice + "bus %(name)s is %(dist)fm away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
+          {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away, 'now': str(datetime.datetime.now().time())[0:8]
+})
         continue # if a bus is within Time_to_go, it's necessarily within Time_to_get_ready, but I don't 
                  # want it to trip the green pin too
       if seconds_away < self.time_to_get_ready:
-        print(green_notice + "bus %(name)s is %(dist)fm away, traveling at %(speed)f mph; computed to be %(mins)s away" % 
-          {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away})
+        print(green_notice + "bus %(name)s is %(dist)fm away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
+          {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away, 'now': str(datetime.datetime.now().time())[0:8]
+})
         turn_on_green_pin = True
                  # but if a second bus is close, I do want the green to go
                  # even if there's a red bus nearby.
@@ -146,7 +151,5 @@ class Bus:
     end = self.time_location_pairs[end_index]
     distance = float(abs(start[1] - end[1]))
     time = abs(start[0] - end[0])
-    print("%(start_dist)f - %(end_dist)f / %(time)i" % {'start_dist': start[1], 'end_dist': end[1], 'time':time.seconds})
-    print(self.time_location_pairs)
     return distance / float(time.seconds)
 
