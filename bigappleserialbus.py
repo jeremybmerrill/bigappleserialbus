@@ -18,8 +18,8 @@ for busName, info in config["stops"].items():
   stop = BusStop(busName, info["stop"], info["distance"], info["redPin"], info["greenPin"])
   bus_stops.append(stop)
   if am_on_pi:
-    GPIO.setup(bus.green_pin, GPIO.OUT)
-    GPIO.setup(bus.red_pin, GPIO.OUT)
+    GPIO.setup(stop.green_pin, GPIO.OUT)
+    GPIO.setup(stop.red_pin, GPIO.OUT)
 
 
 betweenChecks = 60 #seconds
