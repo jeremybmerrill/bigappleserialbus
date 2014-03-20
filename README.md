@@ -13,7 +13,7 @@ install
 4. create a file called apikey.txt that contains your API key, optionally followed by a newline.
 5. create a file called config.yaml, modeled after config-example.yaml. 
 6. get the GTFS stop identifier for your line from the [VehicleMonitoring](http://bustime.mta.info/wiki/Developers/SIRIVehicleMonitoring) API. (Literally watch the feed until a bus is at your stop, then record the stop identifier); paste that into the config file.
-7. python bigappleserialbus.py
+7. sudo python bigappleserialbus.py
 
 platform
 --------

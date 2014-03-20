@@ -1,10 +1,17 @@
 import json
 import urllib2
-from datetime import datetime
+from datetime import datetime, timedelta
 
 time_to_get_ready = 420 # seconds
 time_to_go = 180 #seconds
 defaultBusSpeed = 2.23 # ~= 5 miles per hour
+
+greencode = '\033[92m'
+redcode = '\033[91m'
+endcolor = '\033[0m'
+
+green_notice = greencode + "[green]" + endcolor + " "
+red_notice = redcode + "[red]" + endcolor + " "
 
 mta_key = open("apikey.txt", 'r').read().strip()
 
@@ -13,15 +20,16 @@ class BusStop:
     self.route_name = route_name
     self.red_pin = red_pin
     self.green_pin = green_pin
-    self.time_to_get_ready = (stop_seconds_away) + time_to_go
-    self.time_to_go = (stop_seconds_away) + time_to_go
+    self.stop_seconds_away = stop_seconds_away
+    self.time_to_get_ready = stop_seconds_away + time_to_get_ready
+    self.time_to_go = stop_seconds_away + time_to_go
     self.monitoringRef = number
     self.lineRef = "MTA NYCT_" + route_name.upper()
     self.mta_key = mta_key
     self.buses_on_route = {}
 
   def check(self):
-    vehicle_activities = self.getLocations()
+    vehicle_activities = self.get_locations()
     turn_on_red_pin = False
     turn_on_green_pin = False
     new_buses = {}
@@ -40,18 +48,31 @@ class BusStop:
     self.buses_on_route = new_buses
 
     for bus in self.buses_on_route.values():
-      secondsAway = bus.get_seconds_away()
-      if secondsAway < self.time_to_go:
+      seconds_away = bus.get_seconds_away()
+      minutes_away = str(bus.get_minutes_away())[2:7]
+      metersAway = bus.get_meters_away()
+      speed = bus.get_speed()
+      mph = bus.get_speed_mph()
+
+
+      if seconds_away < self.stop_seconds_away:
+        # too close, won't make it.
+        continue
+      if seconds_away < self.time_to_go:
         turn_on_red_pin = True
+        print(red_notice + "bus %(name)s is %(dist)fm away, traveling at %(speed)f mph; computed to be %(mins)s away" % 
+          {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away})
         continue # if a bus is within Time_to_go, it's necessarily within Time_to_get_ready, but I don't 
-                 # it to trip the green pin too
-      if secondsAway < self.time_to_get_ready:
+                 # want it to trip the green pin too
+      if seconds_away < self.time_to_get_ready:
+        print(green_notice + "bus %(name)s is %(dist)fm away, traveling at %(speed)f mph; computed to be %(mins)s away" % 
+          {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away})
         turn_on_green_pin = True
                  # but if a second bus is close, I do want the green to go
                  # even if there's a red bus nearby.
     return {self.green_pin: turn_on_green_pin, self.red_pin: turn_on_red_pin}
 
-  def getLocations(self):
+  def get_locations(self):
     # line
     # http://api.prod.obanyc.com/api/siri/stop-monitoring.json?key=***REMOVED***&LineRef=MTA%20NYCT_B65
     # stop
@@ -91,6 +112,12 @@ class Bus:
 
   def get_seconds_away(self):
     return self.get_meters_away() / self.get_speed()
+
+  def get_minutes_away(self):
+    return timedelta(seconds=self.get_seconds_away())
+
+  def get_speed_mph(self):
+    return (self.get_speed() * (60 * 60)) / 1609.34
 
   def get_speed(self):
     #meters per second
