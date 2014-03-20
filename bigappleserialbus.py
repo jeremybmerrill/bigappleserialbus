@@ -10,6 +10,7 @@ am_on_pi = is_on_pi()
 if am_on_pi:
   import RPi.GPIO as GPIO
   GPIO.setmode(GPIO.BCM)
+  print("am running on a Raspberry Pi")
 
 
 config = yaml.load(open("config.yaml", 'r'))
@@ -27,12 +28,14 @@ betweenChecks = 60 #seconds
 while True:
   pins = {}
   for bus in bus_stops:
+    print("checking" + bus.route_name)
     busCheck = bus.check()
     for pin, val in busCheck.items():
       pins[pin] = val
   for pin, val in pins.items():
     if am_on_pi:
       GPIO.output(pin, val)
-    if val:
       print("illuminating pin #%(pinNum)d" % {'pinNum': pin})
+    if val:
+      print("would illuminate pin #%(pinNum)d" % {'pinNum': pin})
   time.sleep(betweenChecks)
