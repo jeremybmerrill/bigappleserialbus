@@ -2,9 +2,11 @@ import json
 import urllib2
 from datetime import datetime, timedelta
 
-time_to_get_ready = 420 # seconds
+time_to_get_ready = 240 # seconds
 time_to_go = 180 #seconds
-defaultBusSpeed = 2.23 # ~= 5 miles per hour
+seconds_to_sidewalk = 60 #seconds
+default_bus_speed = 5 # m/s ~= 11 miles per hour
+
 
 greencode = '\033[92m'
 redcode = '\033[91m'
@@ -20,9 +22,9 @@ class BusStop:
     self.route_name = route_name
     self.red_pin = red_pin
     self.green_pin = green_pin
-    self.stop_seconds_away = stop_seconds_away
-    self.time_to_get_ready = stop_seconds_away + time_to_get_ready
-    self.time_to_go = stop_seconds_away + time_to_go
+    self.too_late_to_catch_the_bus = stop_seconds_away + seconds_to_sidewalk
+    self.time_to_get_ready = stop_seconds_away + (time_to_get_ready + time_to_go) + seconds_to_sidewalk
+    self.time_to_go = stop_seconds_away + time_to_go + seconds_to_sidewalk
     self.monitoringRef = number
     self.lineRef = "MTA NYCT_" + route_name.upper()
     self.mta_key = mta_key
@@ -55,7 +57,7 @@ class BusStop:
       mph = bus.get_speed_mph()
 
 
-      if seconds_away < self.stop_seconds_away:
+      if seconds_away < self.too_late_to_catch_the_bus:
         # too close, won't make it.
         continue
       if seconds_away < self.time_to_go:
@@ -104,14 +106,19 @@ class Bus:
 
   def add_stop(self, time, distance_from_call):
     time_seconds = datetime.strptime(time[:19], "%Y-%m-%dT%H:%M:%S")
-    self.time_location_pairs.insert(0, [time_seconds, distance_from_call])
+    if not (self.time_location_pairs and self.time_location_pairs[0][0] == time_seconds):
+      #only insert a new time pair if the time is different
+      self.time_location_pairs.insert(0, [time_seconds, distance_from_call])
     self.time_location_pairs = self.time_location_pairs[0:10]
 
   def get_meters_away(self):
     return self.time_location_pairs[0][1]
 
   def get_seconds_away(self):
-    return self.get_meters_away() / self.get_speed()
+    speed = self.get_speed()
+    if speed == 0.0:
+      return 6000 # a big number of seconds
+    return self.get_meters_away() / speed
 
   def get_minutes_away(self):
     return timedelta(seconds=self.get_seconds_away())
@@ -122,11 +129,12 @@ class Bus:
   def get_speed(self):
     #meters per second
     if len(self.time_location_pairs) < 2:
-      return defaultBusSpeed
+      return default_bus_speed
     long_term = self.naive_speed(0, 9)
     medium_term = self.naive_speed(0, 3)
     short_term = self.naive_speed(0, 1)
-    meters_per_second = ((short_term * 3) + (medium_term + 2) + long_term) / 6
+    #weighted average
+    meters_per_second = ((short_term * 3) + (medium_term * 2) + long_term) / 6
     miles_per_hour = (meters_per_second / 1609.34) * (60 * 60)
     return meters_per_second
 
@@ -138,5 +146,7 @@ class Bus:
     end = self.time_location_pairs[end_index]
     distance = float(abs(start[1] - end[1]))
     time = abs(start[0] - end[0])
+    print("%(start_dist)f - %(end_dist)f / %(time)i" % {'start_dist': start[1], 'end_dist': end[1], 'time':time.seconds})
+    print(self.time_location_pairs)
     return distance / float(time.seconds)
 

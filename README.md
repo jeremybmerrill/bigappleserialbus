@@ -28,8 +28,27 @@ circuit design
 I'll make a picture later.
 it's just pin -> resistor -> LED -> gnd, twice per bus line.
 
+when do lights go on?
+----------------------
+
+Imagine a timeline:
+````
+|---------------------------------------------|------------------|------|
+A                     b                       C         d        E   f  G
+````
+a) Bus is 7 minutes away, plus walking time. Time to get think about leaving.
+b) Green light on
+c) Bus is 3 minutes away, plus walking time. Get your stuff and go.
+d) Red light on
+e) Time to leave. Go now!
+f) Red light off. You might not be able to make it, unless you run faster than your walking time.
+g) Bus passes your stop.
+
+Walking time is the sum of the time it takes to get out of your apartment to the street (constant per stop), and the amount of time it takes to get to any specific stop (which varies per stop, since some stops are farther from you than others).
+
 Ideas for later:
-  Use the light sensor to dim/brighten the LEDs based on ambient light (so they're dim if the light is off).
-  Use the variable resistor/potentiometer to calibrate walking speed (e.g. it's easier to leave the house in the summer, or when no one is here)
-  Blink the green LED to indicate time until next bus. (E.g. once per 20 seconds if bus is 20 minutes away, when bus is TimeToGo, turn on continuously)
-  Use 3x buttons to indicate which bus I want to take, so piezo buzzer plays a tune when it's time to go when that particular bus is close.
+-----------------
+1. Use the light sensor to dim/brighten the LEDs based on ambient light (so they're dim if the light is off).
+1. Use the variable resistor/potentiometer to calibrate walking speed (e.g. it's easier to leave the house in the summer, or when no one is here)
+1. Blink the green LED to indicate time until next bus. (E.g. once per 20 seconds if bus is 20 minutes away, when bus is TimeToGo, turn on continuously)
+1. Use 3x buttons to indicate which bus I want to take, so piezo buzzer plays a tune when it's time to go when that particular bus is close.
