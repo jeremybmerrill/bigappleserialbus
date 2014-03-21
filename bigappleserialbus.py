@@ -4,6 +4,7 @@ import time
 from busstop import BusStop
 from onpi import is_on_pi
 import yaml
+import os
 
 am_on_pi = is_on_pi()
 
@@ -12,8 +13,8 @@ if am_on_pi:
   GPIO.setmode(GPIO.BCM)
   print("am running on a Raspberry Pi")
 
-
-config = yaml.load(open("config.yaml", 'r'))
+config_file_path = os.path.join(os.path.dirname(__file__), "config.yaml")
+config = yaml.load(open(config_file_path, 'r'))
 bus_stops = []
 for busName, info in config["stops"].items():
   stop = BusStop(busName, info["stop"], info["distance"], info["redPin"], info["greenPin"])

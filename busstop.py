@@ -1,3 +1,4 @@
+import os
 import json
 import urllib2
 from datetime import datetime, timedelta
@@ -5,7 +6,7 @@ from datetime import datetime, timedelta
 time_to_get_ready = 240 # seconds
 time_to_go = 180 #seconds
 seconds_to_sidewalk = 60 #seconds
-default_bus_speed = 5 # m/s ~= 11 miles per hour
+default_bus_speed = 4 # m/s ~= 8 miles per hour
 
 
 greencode = '\033[92m'
@@ -16,7 +17,8 @@ endcolor = '\033[0m'
 green_notice = greencode + "[green]" + endcolor + " "
 red_notice = redcode + "[red]" + endcolor + " "
 fail_notice = yellowcode + "[FAIL]" + endcolor + " "
-mta_key = open("apikey.txt", 'r').read().strip()
+apikey_path = os.path.join(os.path.dirname(__file__), "apikey.txt")
+mta_key = open(apikey_path, 'r').read().strip()
 
 class BusStop:
   def __init__(self, route_name, number, stop_seconds_away, red_pin, green_pin):
@@ -133,12 +135,12 @@ class Bus:
 
   def get_speed(self):
     #meters per second
+    # this is a rolling weighted average over the past 10 time/position values
     if len(self.time_location_pairs) < 2:
       return default_bus_speed
     long_term = self.naive_speed(0, 9)
     medium_term = self.naive_speed(0, 3)
     short_term = self.naive_speed(0, 1)
-    #weighted average
     meters_per_second = ((short_term * 3) + (medium_term * 2) + long_term) / 6
     miles_per_hour = (meters_per_second / 1609.34) * (60 * 60)
     return meters_per_second
