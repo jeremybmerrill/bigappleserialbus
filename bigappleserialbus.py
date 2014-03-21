@@ -53,7 +53,8 @@ while True:
     time.sleep(betweenChecks)
   except:
     #turn off all the lights.
-    for stop in bus_stops:
-      GPIO.output(stop.green_pin, False)
-      GPIO.output(stop.red_pin, False)
+    if am_on_pi:
+      for stop in bus_stops:
+        GPIO.output(stop.green_pin, False)
+        GPIO.output(stop.red_pin, False)
     raise

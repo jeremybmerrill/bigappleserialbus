@@ -8,6 +8,7 @@ time_to_go = 180 #seconds
 seconds_to_sidewalk = 60 #seconds
 default_bus_speed = 4 # m/s ~= 8 miles per hour
 
+distance_to_track = 20
 
 greencode = '\033[92m'
 redcode = '\033[91m'
@@ -56,7 +57,7 @@ class BusStop:
       seconds_away = bus.get_seconds_away()
       minutes_away = str(bus.get_minutes_away())[2:7]
       metersAway = bus.get_meters_away()
-      speed = bus.get_speed()
+      speed = bus.get_speed_mps()
       mph = bus.get_speed_mph()
 
       if seconds_away < self.too_late_to_catch_the_bus:
@@ -116,13 +117,13 @@ class Bus:
     if not (self.time_location_pairs and self.time_location_pairs[0][0] == time_seconds):
       #only insert a new time pair if the time is different
       self.time_location_pairs.insert(0, [time_seconds, distance_from_call])
-    self.time_location_pairs = self.time_location_pairs[0:10]
+    self.time_location_pairs = self.time_location_pairs[0:distance_to_track]
 
   def get_meters_away(self):
     return self.time_location_pairs[0][1]
 
   def get_seconds_away(self):
-    speed = self.get_speed()
+    speed = self.get_speed_mps()
     if speed == 0.0:
       return 6000 # a big number of seconds
     return self.get_meters_away() / speed
@@ -131,23 +132,39 @@ class Bus:
     return timedelta(seconds=self.get_seconds_away())
 
   def get_speed_mph(self):
-    return (self.get_speed() * (60 * 60)) / 1609.34
+    return (self.get_speed_mps() * (60 * 60)) / 1609.34
 
-  def get_speed(self):
+  def get_speed_mps(self):
     #meters per second
-    # this is a rolling weighted average over the past 10 time/position values
+    # this is a rolling weighted average over the past distance_to_track time/position values
+    if len(self.time_location_pairs) < 2:
+      return default_bus_speed
+
+    centroid = 3.0
+    speed_sum = 0
+    weight_sum = 0
+    for i, (time, location) in enumerate(self.time_location_pairs):
+      if i == 0:
+        continue;
+      weight = centroid / (abs(i - centroid) if abs(i - centroid) > 0 else 0.5)
+      weight_sum += weight
+      speed_sum += self.naive_speed(0, i) * weight
+    meters_per_second = speed_sum / weight_sum
+    return meters_per_second
+
+  def old_get_speed(self):
     if len(self.time_location_pairs) < 2:
       return default_bus_speed
     long_term = self.naive_speed(0, 9)
-    medium_term = self.naive_speed(0, 3)
-    short_term = self.naive_speed(0, 1)
-    meters_per_second = ((short_term * 3) + (medium_term * 2) + long_term) / 6
-    miles_per_hour = (meters_per_second / 1609.34) * (60 * 60)
+    medium_term = self.naive_speed(0, 4)
+    mid_to_short_term = self.naive_speed(0, 2)
+    short_term = self.naive_speed(0, 1) #ignore this, since it might be stuck at a light
+    meters_per_second = ( (mid_to_short_term * 2) + (medium_term * 2) + long_term) / 5
     return meters_per_second
 
   def naive_speed(self, start_index, end_index):
     if end_index >= len(self.time_location_pairs):
-      end_index = len(self.time_location_pairs) - 1
+      end_index = -1
 
     start = self.time_location_pairs[start_index]
     end = self.time_location_pairs[end_index]
