@@ -54,3 +54,4 @@ Ideas for later:
 1. Use the variable resistor/potentiometer to calibrate walking speed (e.g. it's easier to leave the house in the summer, or when no one is here)
 1. Blink the green LED to indicate time until next bus. (E.g. once per 20 seconds if bus is 20 minutes away, when bus is TimeToGo, turn on continuously)
 1. Use 3x buttons to indicate which bus I want to take, so piezo buzzer plays a tune when it's time to go when that particular bus is close.
+1. Blink for 20 secs when it's really time to run.

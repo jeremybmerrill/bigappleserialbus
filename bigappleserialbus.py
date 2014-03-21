@@ -23,22 +23,37 @@ for busName, info in config["stops"].items():
     GPIO.setup(stop.green_pin, GPIO.OUT)
     GPIO.setup(stop.red_pin, GPIO.OUT)
 
+    #cycle the lights.
+    GPIO.output(stop.green_pin, True)
+    time.sleep(2)
+    GPIO.output(stop.green_pin, False)
+    GPIO.output(stop.red_pin, True)
+    time.sleep(2)
+    GPIO.output(stop.red_pin, False)
+
 
 betweenChecks = 60 #seconds
 
 while True:
-  pins = {}
-  for bus in bus_stops:
-    print("checking " + bus.route_name)
-    busCheck = bus.check()
-    for pin, val in busCheck.items():
-      pins[pin] = val
-  for pin, val in pins.items():
-    if am_on_pi:
-      GPIO.output(pin, val)
-    if val:
+  try:
+    pins = {}
+    for stop in bus_stops:
+      print("checking " + stop.route_name)
+      busCheck = stop.check()
+      for pin, val in busCheck.items():
+        pins[pin] = val
+    for pin, val in pins.items():
       if am_on_pi:
-        print("illuminating pin #%(pinNum)d" % {'pinNum': pin})
-      else:
-        print("would illuminate pin #%(pinNum)d" % {'pinNum': pin})
-  time.sleep(betweenChecks)
+        GPIO.output(pin, val)
+      if val:
+        if am_on_pi:
+          print("illuminating pin #%(pinNum)d" % {'pinNum': pin})
+        else:
+          print("would illuminate pin #%(pinNum)d" % {'pinNum': pin})
+    time.sleep(betweenChecks)
+  except:
+    #turn off all the lights.
+    for stop in bus_stops:
+      GPIO.output(stop.green_pin, False)
+      GPIO.output(stop.red_pin, False)
+    raise
