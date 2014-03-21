@@ -26,7 +26,9 @@ a breadboard, some LEDs and wires
 circuit design
 ---------------
 I'll make a picture later.
-it's just pin -> resistor -> LED -> gnd, twice per bus line.
+it's just pin -> LED -> 560Ω resistor -> gnd, twice per bus line.
+
+If you have 'em, probably better to use a resistor with a lower resistance, like 300ish, I think?
 
 when do lights go on?
 ----------------------
