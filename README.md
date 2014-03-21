@@ -36,13 +36,13 @@ Imagine a timeline:
 |---------------------------------------------|------------------|------|
 A                     b                       C         d        E   f  G
 ````
-a) Bus is 7 minutes away, plus walking time. Time to get think about leaving.
-b) Green light on
-c) Bus is 3 minutes away, plus walking time. Get your stuff and go.
-d) Red light on
-e) Time to leave. Go now!
-f) Red light off. You might not be able to make it, unless you run faster than your walking time.
-g) Bus passes your stop.
+a) Bus is 7 minutes away, plus walking time. Time to get think about leaving.<br>
+b) Green light on<br>
+c) Bus is 3 minutes away, plus walking time. Get your stuff and go.<br>
+d) Red light on<br>
+e) Time to leave. Go now!<br>
+f) Red light off. You might not be able to make it, unless you run faster than your walking time.<br>
+g) Bus passes your stop.<br>
 
 Walking time is the sum of the time it takes to get out of your apartment to the street (constant per stop), and the amount of time it takes to get to any specific stop (which varies per stop, since some stops are farther from you than others).
 
