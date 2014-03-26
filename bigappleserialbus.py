@@ -32,10 +32,12 @@ for busName, info in config["stops"].items():
     GPIO.output(stop.red_pin, False)
 
 
-betweenChecks = 60 #seconds
+#The MTA's bustime website pings every 15 seconds, so I feel comfortable doing the same.
+betweenChecks = 15 #seconds
 
 while True:
   try:
+    start_time = time.time()
     pins = {}
     for stop in bus_stops:
       print("checking " + stop.route_name)
@@ -50,7 +52,8 @@ while True:
           print("illuminating pin #%(pinNum)d" % {'pinNum': pin})
         else:
           print("would illuminate pin #%(pinNum)d" % {'pinNum': pin})
-    time.sleep(betweenChecks)
+    duration = time.time() - start_time
+    time.sleep(betweenChecks - duration)
   except:
     #turn off all the lights.
     if am_on_pi:

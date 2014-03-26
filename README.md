@@ -3,6 +3,8 @@ bigappleserialbus
 
 hardware bus notifier for NYC MTA
 
+lights up green when it's time to get ready to go, green when it's time to go.
+
 install
 -------
 
@@ -56,3 +58,4 @@ Ideas for later:
 1. Blink the green LED to indicate time until next bus. (E.g. once per 20 seconds if bus is 20 minutes away, when bus is TimeToGo, turn on continuously)
 1. Use 3x buttons to indicate which bus I want to take, so piezo buzzer plays a tune when it's time to go when that particular bus is close.
 1. Blink for 20 secs when it's really time to run.
+1. Keep track of average time to "home" stop for each preceding stop. Constrain speed estimates to 80th or 90th percentile (to avoid erroneous lights when the bus is going really fast for a short stretch)
