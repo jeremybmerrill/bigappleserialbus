@@ -57,7 +57,7 @@ while True:
         else:
           print("would illuminate pin #%(pinNum)d" % {'pinNum': pin})
     duration = time.time() - start_time
-    time.sleep(betweenChecks - duration)
+    time.sleep(max(betweenChecks - duration, 0))
   except:
     if am_on_pi:
       #turn off all the lights.
