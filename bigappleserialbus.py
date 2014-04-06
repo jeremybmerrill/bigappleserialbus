@@ -63,6 +63,14 @@ while True:
       #turn off all the lights.
       for stop in bus_stops:
         GPIO.output(stop.green_pin, False)
-        GPIO.output(stop.red_pin, False)
+        GPIO.output(stop.red_pin, True)
       logging.exception('Got exception on main handler')
-    raise
+
+      #then blink red to signal an error condition
+      while True:
+        for stop in bus_stops:
+          GPIO.output(stop.red_pin, True)
+        time.sleep(1)
+        for stop in bus_stops:
+          GPIO.output(stop.red_pin, False)
+        time.sleep(1)
