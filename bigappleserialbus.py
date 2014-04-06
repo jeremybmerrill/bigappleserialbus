@@ -6,6 +6,10 @@ from onpi import is_on_pi
 import yaml
 import os
 
+import logging
+LOG_FILENAME = '/tmp/buses.log'
+logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG,)
+
 am_on_pi = is_on_pi()
 
 if am_on_pi:
@@ -55,9 +59,10 @@ while True:
     duration = time.time() - start_time
     time.sleep(betweenChecks - duration)
   except:
-    #turn off all the lights.
     if am_on_pi:
+      #turn off all the lights.
       for stop in bus_stops:
         GPIO.output(stop.green_pin, False)
         GPIO.output(stop.red_pin, False)
+      logging.exception('Got exception on main handler')
     raise

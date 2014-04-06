@@ -59,3 +59,4 @@ Ideas for later:
 1. Use 3x buttons to indicate which bus I want to take, so piezo buzzer plays a tune when it's time to go when that particular bus is close.
 1. Blink for 20 secs when it's really time to run.
 1. Keep track of average time to "home" stop for each preceding stop. Constrain speed estimates to 80th or 90th percentile (to avoid erroneous lights when the bus is going really fast for a short stretch)
+1. For each stop S, keep track of the distribution of times it took for a bus at S to arrive at the "home" stop. Also keep track of distribution of time to home from S over a bucketized amount of time for the bus to travel some other constant distance (maybe from when it departed terminal? to account for variances in speed over date/time/weather)

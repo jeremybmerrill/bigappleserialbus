@@ -109,9 +109,9 @@ class BusStop:
 
   def get_locations(self):
     # line
-    # http://api.prod.obanyc.com/api/siri/stop-monitoring.json?key=&LineRef=MTA%20NYCT_B65
+    # http://api.prod.obanyc.com/api/siri/stop-monitoring.json?key=whatever&LineRef=MTA%20NYCT_B65
     # stop
-    # http://api.prod.obanyc.com/api/siri/stop-monitoring.json?key=&MonitoringRef=306495&LineRef=MTA%20NYCT_B65
+    # http://api.prod.obanyc.com/api/siri/stop-monitoring.json?key=whatever&MonitoringRef=306495&LineRef=MTA%20NYCT_B65
 
     requestUrl = "http://bustime.mta.info/api/siri/stop-monitoring.json?key=%(key)s&OperatorRef=MTA&MonitoringRef=%(stop)s" %\
             {'key': self.mta_key, 'stop': self.monitoringRef}
