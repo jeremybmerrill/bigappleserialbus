@@ -4,6 +4,13 @@ import urllib2
 from datetime import datetime, timedelta
 import time
 
+from sqlalchemy import Column, ForeignKey, Integer, String, Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import orm
+# from sqlalchemy import create_engine
+
+Base = declarative_base()
+
 time_to_get_ready = 240 # seconds
 time_to_go = 180 #seconds
 seconds_to_sidewalk = 60 #seconds
@@ -20,22 +27,42 @@ green_notice = greencode + "[green]" + endcolor + " "
 red_notice = redcode + "[red]" + endcolor + " "
 fail_notice = yellowcode + "[FAIL]" + endcolor + " "
 apikey_path = os.path.join(os.path.dirname(__file__), "apikey.txt")
-mta_key = open(apikey_path, 'r').read().strip()
+mta_api_key = open(apikey_path, 'r').read().strip()
 
 errors = {}
 
-class BusStop:
-  def __init__(self, route_name, number, stop_seconds_away, red_pin, green_pin):
+
+# store in database green-light-on times and  actual arrival times
+# to calculate avg error
+class BusStop(Base):
+  __tablename__ = 'bus_stop'
+  stop_id = Column(String(10), primary_key=True)
+  route_name = Column(String(250), nullable=False)
+  mta_key = mta_api_key
+  errors_serialized = Column(Text(), nullable=True)
+
+  def __init__(self, route_name, stop_id):
     self.route_name = route_name
+    self.stop_id = stop_id
+    self.errors = []
+
+  @orm.reconstructor
+  def init_on_load(self):
+    self.lineRef = "MTA NYCT_" + self.route_name.upper()
+    self.buses_on_route = {}
+    if self.errors_serialized:
+      self.errors = self.errors_serialized.split(",")
+    else:
+      self.errors = []
+
+  # non-persistant attributes
+  def add_attributes(self, stop_seconds_away, red_pin, green_pin):
     self.red_pin = red_pin
     self.green_pin = green_pin
     self.too_late_to_catch_the_bus = stop_seconds_away + seconds_to_sidewalk
     self.time_to_get_ready = stop_seconds_away + (time_to_get_ready + time_to_go) + seconds_to_sidewalk
     self.time_to_go = stop_seconds_away + time_to_go + seconds_to_sidewalk
-    self.monitoringRef = number
-    self.lineRef = "MTA NYCT_" + route_name.upper()
-    self.mta_key = mta_key
-    self.buses_on_route = {}
+
 
   def check(self):
     vehicle_activities = self.get_locations()
@@ -54,7 +81,30 @@ class BusStop:
       active_bus = new_buses[vehicle_ref]
       active_bus.add_observed_position(activity["RecordedAtTime"], distance_from_call)
     
+    for bus_key, bus in self.buses_on_route.items():
+      #for buses that just passed us:
+      if bus_key not in new_buses.keys() and bus.first_projected_arrival != 0.0:
+        error = bus.first_projected_arrival - time.time()
+
+        # if self.route_name not in errors:
+        #   errors[self.route_name] = {}
+        # errors[self.route_name][vehicle_ref] = error
+        # print(errors[self.route_name].values())
+        self.errors.append(error)
+        avg_error = sum(self.errors) / len(self.errors)
+
+        if error > 0:
+          print("original projection was incorrect, bus was %(sec)f seconds early" % {'sec': int(error)})
+        else:
+          print("original projection was incorrect, bus was %(sec)f seconds late" % {'sec': int(abs(error))})
+        
+        if avg_error > 0:
+          print("bus is, on average, %(sec)f seconds early" % {'sec': int(error)})
+        else:
+          print("bus is, on average, %(sec)f seconds late" % {'sec': int(abs(error))})
+
     self.buses_on_route = new_buses
+
 
     for vehicle_ref, bus in self.buses_on_route.items():
       seconds_away = bus.get_seconds_away()
@@ -69,20 +119,6 @@ class BusStop:
           {'name': self.route_name, 'dist': metersAway, 'speed': mph, 'mins': minutes_away, 
             'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
           })
-
-        if bus.first_projected_arrival != 0.0:
-          error = bus.first_projected_arrival - time.time()
-
-          if self.route_name not in errors:
-            errors[self.route_name] = {}
-          errors[self.route_name][vehicle_ref] = error
-          print(errors[self.route_name].values())
-
-          if error > 0:
-            print("original projection was incorrect, bus was %(sec)f seconds early" % {'sec': int(error)})
-          else:
-            print("original projection was incorrect, bus was %(sec)f seconds late" % {'sec': int(abs(error))})
-
         continue
       if seconds_away < self.time_to_go:
         turn_on_red_pin = True
@@ -114,14 +150,24 @@ class BusStop:
     # http://api.prod.obanyc.com/api/siri/stop-monitoring.json?key=whatever&MonitoringRef=306495&LineRef=MTA%20NYCT_B65
 
     requestUrl = "http://bustime.mta.info/api/siri/stop-monitoring.json?key=%(key)s&OperatorRef=MTA&MonitoringRef=%(stop)s" %\
-            {'key': self.mta_key, 'stop': self.monitoringRef}
-    response = urllib2.urlopen(requestUrl)
+            {'key': self.mta_key, 'stop': self.stop_id}
+    for i in xrange(0,4):
+      try:
+        response = urllib2.urlopen(requestUrl)
+        break
+      except urllib2.URLError: 
+        response = None
+        time.sleep(10)
+
+    if not response:
+      raise urllib2.URLError("Couldn't reach BusTime servers...")
+
     jsonresp = response.read()
     resp = json.loads(jsonresp)
     return resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"]
 
   def __repr__(self):
-    return "<BusStop %(route)s #%(number)s >" % {"route" : self.route_name, "number" : self.monitoringRef }
+    return "<BusStop %(route)s #%(stop_id)s >" % {"route" : self.route_name, "number" : self.stop_id }
 
 
 class Bus:
