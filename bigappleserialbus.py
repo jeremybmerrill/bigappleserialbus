@@ -74,3 +74,5 @@ while True:
         for stop in bus_stops:
           GPIO.output(stop.red_pin, False)
         time.sleep(1)
+    else:
+      break

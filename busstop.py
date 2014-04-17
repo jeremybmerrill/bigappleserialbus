@@ -115,7 +115,17 @@ class BusStop:
 
     requestUrl = "http://bustime.mta.info/api/siri/stop-monitoring.json?key=%(key)s&OperatorRef=MTA&MonitoringRef=%(stop)s" %\
             {'key': self.mta_key, 'stop': self.monitoringRef}
-    response = urllib2.urlopen(requestUrl)
+    for i in xrange(0,4):
+      try:
+        response = urllib2.urlopen(requestUrl)
+        break
+      except URLError: 
+        response = None
+        time.sleep(10)
+
+    if not response:
+      raise URLError("Couldn't reach BusTime servers...")
+
     jsonresp = response.read()
     resp = json.loads(jsonresp)
     return resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"]

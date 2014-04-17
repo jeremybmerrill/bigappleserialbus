@@ -54,9 +54,8 @@ Walking time is the sum of the time it takes to get out of your apartment to the
 Ideas for later:
 -----------------
 1. Use the light sensor to dim/brighten the LEDs based on ambient light (so they're dim if the light is off).
-1. Use the variable resistor/potentiometer to calibrate walking speed (e.g. it's easier to leave the house in the summer, or when no one is here)
+1. Use the variable resistor/potentiometer to calibrate walking speed (e.g. it's easier to leave the house in the summer, or when no friends are here)
 1. Blink the green LED to indicate time until next bus. (E.g. once per 20 seconds if bus is 20 minutes away, when bus is TimeToGo, turn on continuously)
-1. Use 3x buttons to indicate which bus I want to take, so piezo buzzer plays a tune when it's time to go when that particular bus is close.
 1. Blink for 20 secs when it's really time to run.
 1. Keep track of average time to "home" stop for each preceding stop. Constrain speed estimates to 80th or 90th percentile (to avoid erroneous lights when the bus is going really fast for a short stretch)
 1. For each stop S, keep track of the distribution of times it took for a bus at S to arrive at the "home" stop. Also keep track of distribution of time to home from S over a bucketized amount of time for the bus to travel some other constant distance (maybe from when it departed terminal? to account for variances in speed over date/time/weather)
