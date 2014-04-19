@@ -119,12 +119,12 @@ class BusStop:
       try:
         response = urllib2.urlopen(requestUrl)
         break
-      except URLError: 
+      except urllib2.URLError: 
         response = None
         time.sleep(10)
 
     if not response:
-      raise URLError("Couldn't reach BusTime servers...")
+      raise urllib2.URLError("Couldn't reach BusTime servers...")
 
     jsonresp = response.read()
     resp = json.loads(jsonresp)
