@@ -3,6 +3,7 @@ import json
 import urllib2
 from datetime import datetime, timedelta
 import time
+from socket import error as SocketError
 
 from sqlalchemy import Column, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
@@ -168,7 +169,7 @@ class BusStop(Base):
       try:
         response = urllib2.urlopen(requestUrl)
         break
-      except urllib2.URLError: 
+      except urllib2.URLError, SocketError: 
         response = None
         time.sleep(10)
 
