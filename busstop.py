@@ -3,6 +3,7 @@ import json
 import urllib2
 from datetime import datetime, timedelta
 import time
+from socket import error as SocketError
 
 time_to_get_ready = 240 # seconds
 time_to_go = 180 #seconds
@@ -119,7 +120,7 @@ class BusStop:
       try:
         response = urllib2.urlopen(requestUrl)
         break
-      except urllib2.URLError: 
+      except urllib2.URLError, SocketError: 
         response = None
         time.sleep(10)
 
