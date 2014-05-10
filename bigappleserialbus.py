@@ -64,7 +64,7 @@ while True:
     start_time = time.time()
     pins = {}
     for stop in bus_stops:
-      print("checking " + stop.route_name)
+      print("checking " + stop.route_name + " (" + str(len(stop.buses_on_route))) + " buses on route)"
       busCheck = stop.check()
       for pin, val in busCheck.items():
         pins[pin] = val
@@ -76,6 +76,7 @@ while True:
           print("illuminating pin #%(pinNum)d" % {'pinNum': pin})
         else:
           print("would illuminate pin #%(pinNum)d" % {'pinNum': pin})
+    session.commit()
     duration = time.time() - start_time
     time.sleep(max(betweenChecks - duration, 0))
   except:

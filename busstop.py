@@ -21,11 +21,13 @@ distance_to_track = 20
 greencode = '\033[92m'
 redcode = '\033[91m'
 yellowcode = '\033[93m'
+bluecode = "\033[34m"
 endcolor = '\033[0m'
 
 green_notice = greencode + "[green]" + endcolor + " "
 red_notice = redcode + "[red]" + endcolor + " "
 fail_notice = yellowcode + "[FAIL]" + endcolor + " "
+remove_notice = bluecode + "[removed]" + endcolor + " "
 apikey_path = os.path.join(os.path.dirname(__file__), "apikey.txt")
 mta_api_key = open(apikey_path, 'r').read().strip()
 
@@ -45,13 +47,14 @@ class BusStop(Base):
     self.route_name = route_name
     self.stop_id = stop_id
     self.errors = []
+    self.buses_on_route = {}
 
   @orm.reconstructor
   def init_on_load(self):
     self.lineRef = "MTA NYCT_" + self.route_name.upper()
     self.buses_on_route = {}
     if self.errors_serialized:
-      self.errors = self.errors_serialized.split(",")
+      self.errors = map(float, self.errors_serialized.split(","))
     else:
       self.errors = []
 
@@ -81,10 +84,13 @@ class BusStop(Base):
       active_bus = new_buses[vehicle_ref]
       active_bus.add_observed_position(activity["RecordedAtTime"], distance_from_call)
     
+    print(map(lambda b: b.number, self.buses_on_route.values()), map(lambda b: b.number, new_buses.values()))
+
     for bus_key, bus in self.buses_on_route.items():
       #for buses that just passed us:
       if bus_key not in new_buses.keys() and bus.first_projected_arrival != 0.0:
         error = bus.first_projected_arrival - time.time()
+        #TODO: lol, when my comptuer goes to sleep, it picks up when it's done, so we get unrealistic errors
 
         # if self.route_name not in errors:
         #   errors[self.route_name] = {}
@@ -92,16 +98,19 @@ class BusStop(Base):
         # print(errors[self.route_name].values())
         self.errors.append(error)
         avg_error = sum(self.errors) / len(self.errors)
+        median_error = sorted(self.errors)[len(self.errors) / 2]
 
-        if error > 0:
-          print("original projection was incorrect, bus was %(sec)f seconds early" % {'sec': int(error)})
-        else:
-          print("original projection was incorrect, bus was %(sec)f seconds late" % {'sec': int(abs(error))})
-        
-        if avg_error > 0:
-          print("bus is, on average, %(sec)f seconds early" % {'sec': int(error)})
-        else:
-          print("bus is, on average, %(sec)f seconds late" % {'sec': int(abs(error))})
+
+        error_early_late = "early" if error > 0 else "late"
+        avg_early_late = "early" if avg_error > 0 else "late"
+        median_early_late = "early" if median_error > 0 else "late"
+
+        print(remove_notice + "original projection for %(veh)s was incorrect, bus was %(sec)f seconds %(early_late)s" % 
+            {'sec': int(abs(error)), 'early_late': error_early_late, 'veh': bus.number})
+        print("bus %(name)s is, on average, %(avg_error)f seconds %(avg_early_late)s; median %(med)f %(median_early_late)s" % 
+          {'avg_error': int(abs(avg_error)), 'name': self.route_name, 'med': int(abs(median_error)), 
+          'avg_early_late': avg_early_late, 'median_early_late': median_early_late})
+        print self.errors
 
     self.buses_on_route = new_buses
 
@@ -141,7 +150,11 @@ class BusStop(Base):
         #for debug:
         if bus.first_projected_arrival == 0:
           bus.first_projected_arrival = time.time() + seconds_away
+    self.prep_for_writing()
     return {self.green_pin: turn_on_green_pin, self.red_pin: turn_on_red_pin}
+
+  def prep_for_writing(self):
+    self.errors_serialized = ','.join(map(str, self.errors))
 
   def get_locations(self):
     # line
