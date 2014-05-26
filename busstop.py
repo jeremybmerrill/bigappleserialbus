@@ -77,6 +77,7 @@ class BusStop(Base):
     turn_on_red_pin = False
     turn_on_green_pin = False
     new_buses = {}
+    trajectories = []
     for activity in vehicle_activities:
       journey = activity["MonitoredVehicleJourney"]
 
@@ -120,9 +121,8 @@ class BusStop(Base):
         print("bus %(name)s is, on average, %(avg_error)f seconds %(avg_early_late)s; median %(med)f %(median_early_late)s" % 
           {'avg_error': int(abs(avg_error)), 'name': self.route_name, 'med': int(abs(median_error)), 
           'avg_early_late': avg_early_late, 'median_early_late': median_early_late})
-        print self.errors
-        traj = bus.convert_to_trajectory(self.route_name, self.stop_id) #calculate the right columns.
-        t
+        # print self.errors
+        trajectories.append(bus.convert_to_trajectory(self.route_name, self.stop_id)) #calculate the right columns.
     self.buses_on_route = new_buses
 
 
@@ -165,7 +165,7 @@ class BusStop(Base):
         if bus.first_projected_arrival == 0.0:
           bus.first_projected_arrival = time.time() + seconds_away
     self.prep_for_writing()
-    return {self.green_pin: turn_on_green_pin, self.red_pin: turn_on_red_pin}
+    return ({self.green_pin: turn_on_green_pin, self.red_pin: turn_on_red_pin}, trajectories)
 
   def prep_for_writing(self):
     self.errors_serialized = ','.join(map(str, self.errors))
