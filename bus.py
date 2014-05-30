@@ -40,6 +40,8 @@ class Bus:
     recorded_at = datetime.strptime(recorded_at_str[:19], "%Y-%m-%dT%H:%M:%S")
     distance_from_call = journey["MonitoredCall"]["Extensions"]["Distances"]["DistanceFromCall"]
     next_stop_ref = journey["OnwardCalls"]["OnwardCall"][0]["StopPointRef"]
+    presentable_distance = journey["OnwardCalls"]["OnwardCall"][0]["Extensions"]["Distances"]["PresentableDistance"]
+
     if not self.start_time:
       self.start_time = recorded_at
 
@@ -54,35 +56,49 @@ class Bus:
       # - the recorded_at time hasn't changed -- i.e. the bus hasn't updated its position
       if self.stop_time_pairs and (not self.stop_time_pairs[next_stop_ref]):
         prev_stop_ref = self.stops[self.stops.index(next_stop_ref)-1]
-        #if we're at a stop, add it to the thing
-        if journey["OnwardCalls"]["OnwardCall"][0]["Extensions"]["Distances"]["PresentableDistance"] == "at stop":
-          self.stop_time_pairs[next_stop_ref] = recorded_at
+
+        #TODO loop over all previous stop_time_pairs that are None
         #if we've passed the next stop (i.e. the first key with None as its value), interpolate its value
-          print("%(bus_name)s add_observed_position at stop" % {'bus_name': self.number})
-        elif self.stops.index(next_stop_ref) > 0 and self.stop_time_pairs[prev_stop_ref] is None:
-          #interpolate
+        if self.stops.index(next_stop_ref) > 0 and self.stop_time_pairs[prev_stop_ref] is None:
           this_location = self.time_location_pairs[0]
           previous_location = self.time_location_pairs[1]
 
-          distance_traveled = previous_location[1] - this_location[1] #TODO: record previous_distance_to_next_stop
-          distance_to_missed_stop_from_previous_check = previous_location[1] - self.previous_distance_to_next_stop
+          distance_traveled = previous_location[1] - this_location[1]
+          distance_to_missed_stop_from_previous_check = self.previous_distance_to_next_stop #TODO: erase this line
           time_elapsed = this_location[0] - previous_location[0]
           time_to_missed_stop = time_elapsed.seconds * (distance_to_missed_stop_from_previous_check / distance_traveled) 
           interpolated_prev_stop_arrival_time = timedelta(seconds=time_to_missed_stop) + previous_location[0]
           self.stop_time_pairs[prev_stop_ref] = interpolated_prev_stop_arrival_time
-          print("%(bus_name)s add_observed_position interpolated" % {'bus_name': self.number})
+          print("%(bus_name)s add_observed_position interpolated; next stop: %(stop_ref)s, so prev_stop: %(prev_stop)s" % 
+                {'bus_name': self.number, 'stop_ref': next_stop_ref, 'prev_stop': prev_stop_ref})
+          print("distance: prev: %(prev_loc)fm, this: %(this_loc)fm; prev_dist: %(prev_dist)f" % 
+            {'prev_loc': previous_location[1], 'this_loc': this_location[1], 'prev_dist': self.previous_distance_to_next_stop})
+          print("time: elapsed: %(el)fs, to next stop: %(tonext)fs; interpolated: %(interp)s" % 
+            {'el': time_elapsed.seconds, 'tonext': time_to_missed_stop, 'interp': interpolated_prev_stop_arrival_time.strftime("%H:%M:%S")})
+        
+        #if we're at a stop, add it to the stop_time_pairs 
+        # (being at_stop and needing to interpolate the previous stop are not mutually exclusive.)
+        # Buses often lay over at the first stop, so we record the *last* time it as at the stop.
+        if self.stops.index(next_stop_ref) > 0 and presentable_distance == "at stop":
+          self.stop_time_pairs[next_stop_ref] = recorded_at
+          print("%(bus_name)s add_observed_position at stop" % {'bus_name': self.number})
+        elif self.stops.index(next_stop_ref) == 1 and self.previous_presentable_distance == "at stop":
+          previous_location = self.time_location_pairs[1]
+          self.stop_time_pairs[prev_stop_ref] = previous_location[0]
+          print("%(bus_name)s add_observed_position at stop" % {'bus_name': self.number})
         else:
           print("%(bus_name)s add_observed_position passes 2 (not at a new stop)" % {'bus_name': self.number})
           pass
       else:
-        print("%(bus_name)s add_observed_position passes 1" % {'bus_name': self.number})
+        print("%(bus_name)s add_observed_position passes 1 (the next stop is already set)" % {'bus_name': self.number})
         pass
     else:
       print("%(bus_name)s add_observed_position passes 0 (last %(rec)s; now: %(now)s )" % 
           {'bus_name': self.number, 'rec': self.time_location_pairs[0][0], 'now': datetime.now()})
       pass
     self.previous_distance_to_next_stop = journey["OnwardCalls"]["OnwardCall"][0]["Extensions"]["Distances"]["DistanceFromCall"]
-    print(self.stop_time_pairs)
+    self.previous_presentable_distance = presentable_distance
+    print([(stop_ref, self.stop_time_pairs[stop_ref].strftime("%H:%M:%S")) if self.stop_time_pairs[stop_ref] else (stop_ref,) for stop_ref in self.stops ])
 
   def get_meters_away(self):
     return self.time_location_pairs[0][1]
@@ -165,7 +181,7 @@ class Bus:
 
     for index, onward_call in enumerate(journey["OnwardCalls"]["OnwardCall"]):
       stop_ref = onward_call["StopPointRef"]
-      if stop_ref not in self.stop_time_pairs:
+      if stop_ref not in self.stops:
         i = stop_ref #IntermediateStop(self.route_name, stop_ref, onward_call["StopPointName"])
         self.stops.append(i)
         self.stop_time_pairs[i] = None

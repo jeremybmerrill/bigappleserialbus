@@ -14,7 +14,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from busstop import Base 
+from busstop import Base
 
 #database crap
 engine = create_engine('sqlite:///buses.db') #only creates the file if it doesn't exist already
@@ -67,6 +67,7 @@ while True:
       print("checking %(route_name)s (%(count)i buses on route)" % 
         {'route_name': stop.route_name, 'count': len(stop.buses_on_route) })
       busCheck, trajectories = stop.check()
+      print(trajectories)
       for traj in [traj for traj in trajectories if traj]:
         session.add(traj)
       for pin, val in busCheck.items():

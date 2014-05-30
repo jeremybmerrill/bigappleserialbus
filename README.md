@@ -60,3 +60,7 @@ Ideas for later:
 1. Keep track of average time to "home" stop for each preceding stop. Constrain speed estimates to 80th or 90th percentile (to avoid erroneous lights when the bus is going really fast for a short stretch)
 1. For each stop S before "home", keep track of the distribution of times it took for a bus at S to arrive at the "home" stop. Also keep track of distribution of time to home from S over a bucketized amount of time for the bus to travel some other constant distance (maybe from when it departed terminal? to account for variances in speed over date/time/weather)
 1. HTTP: keep track of each trip and the arrival time at each stop prior to home.
+
+
+keep track of trajectories:
+a table per route, with a column per stop, with records containing 

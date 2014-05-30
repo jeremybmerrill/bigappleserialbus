@@ -1,10 +1,14 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm
+from sqlalchemy.ext.declarative import declarative_base
 
-class Trajectory:
+Base = declarative_base()
+
+class Trajectory(Base):
   __tablename__ = 'trajectories'
-  end_stop_id = Column(String(10), primary_key=True)
+  traj_id = Column(Integer, primary_key=True)
+  end_stop_id = Column(String(10), nullable=False)
   route_name = Column(String(250), nullable=False)
   start_time = Column(DateTime, nullable=False)
   segment0 = Column(Integer, nullable=True)
@@ -50,7 +54,7 @@ class Trajectory:
 
   def __init__(self, route_name, stop_id, start_time):
     self.route_name = route_name
-    self.stop_id = stop_id
+    self.end_stop_id = stop_id
     self.start_time = start_time
 
   def set_segment_intervals(self, segment_intervals):

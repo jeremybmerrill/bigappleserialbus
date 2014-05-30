@@ -5,15 +5,13 @@ from datetime import datetime, timedelta
 import time
 from socket import error as SocketError
 from bus import Bus
-from trajectory import Trajectory
+from trajectory import Trajectory, Base
 
 
 from sqlalchemy import Column, ForeignKey, Integer, String, Text
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm
 # from sqlalchemy import create_engine
 
-Base = declarative_base()
 
 time_to_get_ready = 240 # seconds
 time_to_go = 180 #seconds
