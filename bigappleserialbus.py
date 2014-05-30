@@ -70,9 +70,9 @@ while True:
       while True:
         for stop in bus_stops:
           GPIO.output(stop.red_pin, True)
-        time.sleep(1)
+        time.sleep(5)
         for stop in bus_stops:
           GPIO.output(stop.red_pin, False)
-        time.sleep(1)
+        time.sleep(5)
     else:
       break
