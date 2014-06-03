@@ -1,6 +1,7 @@
 import os
 import json
 import urllib2
+from httplib import BadStatusLine
 from datetime import datetime, timedelta
 import time
 from socket import error as SocketError
@@ -60,12 +61,13 @@ class BusStop(Base):
       self.errors = []
 
   # non-persistant attributes
-  def add_attributes(self, stop_seconds_away, red_pin, green_pin):
+  def add_attributes(self, stop_seconds_away, red_pin, green_pin, session):
     self.red_pin = red_pin
     self.green_pin = green_pin
     self.too_late_to_catch_the_bus = stop_seconds_away + seconds_to_sidewalk
     self.time_to_get_ready = stop_seconds_away + (time_to_get_ready + time_to_go) + seconds_to_sidewalk
     self.time_to_go = stop_seconds_away + time_to_go + seconds_to_sidewalk
+    self.db_session = session
 
     #get previous stops using "&StopMonitoringDetailLevel=calls"
 
@@ -86,14 +88,11 @@ class BusStop(Base):
       if vehicle_ref in self.buses_on_route:
         new_buses[vehicle_ref] = self.buses_on_route[vehicle_ref]
       else:
-        new_buses[vehicle_ref] = Bus(vehicle_ref, journey)
+        new_buses[vehicle_ref] = Bus(vehicle_ref, journey, self.route_name, self.db_session)
       active_bus = new_buses[vehicle_ref]
 
       active_bus.add_observed_position(journey, activity["RecordedAtTime"])
-
-
     print( map(lambda b: b.number, new_buses.values()))
-
 
     for bus_key, bus in self.buses_on_route.items():
       #for buses that just passed us (and that ever got close enough to have a projected arrival time):
@@ -132,6 +131,12 @@ class BusStop(Base):
       speed = bus.get_speed_mps()
       mph = bus.get_speed_mph()
 
+      similar_trajectories = bus.find_similar_trajectories()
+      similar_seconds_away = similar_trajectories['seconds_away']
+      print("bus %(name)s: %(sec)i secs away; %(secsim)i secs away from %(cnt)i similar trajectories" % 
+        {'name': self.route_name, 'sec': seconds_away, 'secsim': similar_seconds_away,
+         'cnt':len(similar_trajectories['similar']) } )
+
       if seconds_away < self.too_late_to_catch_the_bus:
         # too close, won't make it.
         print(fail_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
@@ -146,7 +151,7 @@ class BusStop(Base):
             'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
           })
         if bus.first_projected_arrival == 0.0:
-          bus.first_projected_arrival = time.time() + seconds_away
+          bus.first_projected_arrival = time.time() + similar_seconds_away
         continue 
         # if a bus is within Time_to_go, it's necessarily within Time_to_get_ready, but I don't 
         # want it to trip the green pin too
@@ -161,11 +166,12 @@ class BusStop(Base):
 
         #for calculating error:
         if bus.first_projected_arrival == 0.0:
-          bus.first_projected_arrival = time.time() + seconds_away
+          bus.first_projected_arrival = time.time() + similar_seconds_away
     self.prep_for_writing()
     return ({self.green_pin: turn_on_green_pin, self.red_pin: turn_on_red_pin}, trajectories)
 
   def prep_for_writing(self):
+    #TODO: remove
     self.errors_serialized = ','.join(map(str, self.errors))
 
   def get_locations(self):
@@ -180,7 +186,7 @@ class BusStop(Base):
       try:
         response = urllib2.urlopen(requestUrl)
         break
-      except urllib2.URLError, SocketError: 
+      except (urllib2.URLError, SocketError, BadStatusLine):
         response = None
         time.sleep(10)
 
