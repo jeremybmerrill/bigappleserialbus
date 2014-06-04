@@ -80,8 +80,8 @@ if __name__ == "__main__":
         if val:
           if am_on_pi:
             print("illuminating pin #%(pinNum)d" % {'pinNum': pin})
-          else:
-            print("would illuminate pin #%(pinNum)d" % {'pinNum': pin})
+          # else:
+          #   print("would illuminate pin #%(pinNum)d" % {'pinNum': pin})
       session.commit()
       duration = time.time() - start_time
       time.sleep(max(betweenChecks - duration, 0))

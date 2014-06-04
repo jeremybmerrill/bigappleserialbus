@@ -33,15 +33,20 @@ class Bus:
     self.route_name = route_name
 
     self.first_projected_arrival = 0
+    self.first_projected_arrival_speeds = 0
     self.set_trajectory_points(journey)
 
   def add_observed_position(self, journey, recorded_at_str):
     """tk"""
+    #TODO: refactor this method, use a previous_observed_position object
+    # or a single list of dicts() holding all the relevant info from each prevoiusly observed position
+
     recorded_at = datetime.strptime(recorded_at_str[:19], "%Y-%m-%dT%H:%M:%S")
     distance_from_call = journey["MonitoredCall"]["Extensions"]["Distances"]["DistanceFromCall"]
     next_stop_ref = journey["OnwardCalls"]["OnwardCall"][0]["StopPointRef"]
     presentable_distance = journey["OnwardCalls"]["OnwardCall"][0]["Extensions"]["Distances"]["PresentableDistance"]
-
+    distance_to_next_stop
+    
     # as soon as the bus starts moving from its start point. 
     # (Don't count as its start_time time it spends going the opposite direction)
     if not self.start_time and next_stop_ref in self.stops and self.stops.index(next_stop_ref) > 0:
@@ -106,6 +111,7 @@ class Bus:
     self.previous_distance_to_next_stop = journey["OnwardCalls"]["OnwardCall"][0]["Extensions"]["Distances"]["DistanceFromCall"]
     self.previous_presentable_distance = presentable_distance
     print([(stop_ref, self.stop_time_pairs[stop_ref].strftime("%H:%M:%S")) if self.stop_time_pairs[stop_ref] else (stop_ref,) for stop_ref in self.stops ])
+
 
   # this just fills in the keys to self.stop_time_pairs and members of self.stops
   # called only on init.
@@ -172,28 +178,25 @@ class Bus:
     trajs = [traj[:truncate_trajs_to] for traj in trajs]
 
     segment_intervals = self.segment_intervals()
-    if segment_intervals is None:
+    if segment_intervals is None or all([seg is None for seg in  segment_intervals]):
       return {'similar': [], 'seconds_away': -1}
-    #truncate to whatever's less of the last defined point of this bus and of these trajectories.
-    truncate_to = segment_intervals.index(None) if None in segment_intervals else len(segment_intervals) #TODO: last defined segment
-    segment_intervals = segment_intervals[0:truncate_to]
-    truncated_trajectories = array([traj[0:truncate_to] for traj in trajs]) #TODO: check for off-by-one here
+    #truncate to last defined point of this bus (i.e. where it is now) to find similar trajectories _so far_.
+    print('segment_intervals', segment_intervals)
+    last_defined_segment_index = segment_intervals.index(None) if None in segment_intervals else len(segment_intervals) #TODO: last defined segment
+    truncated_trajectories = array([traj[:last_defined_segment_index] for traj in trajs]) #TODO: check for off-by-one here
     centroids,_ = kmeans(truncated_trajectories,5) #TODO: 5 is a magic number. choose it better.
     indexes,_ = vq(truncated_trajectories,centroids)
-    my_cluster_index, _ = vq(array([segment_intervals]), centroids)
+
+    truncated_segment_intervals = segment_intervals[:last_defined_segment_index]
+    my_cluster_index, _ = vq(array([truncated_segment_intervals]), centroids)
     my_cluster_index = my_cluster_index[0]
     similar_trajectories = [traj for idx, traj in enumerate(trajs) if idx == my_cluster_index]
 
     # average time-to-home-stop of the similar trajectories
-    remaining_times_on_similar_trajectories = [sum(traj[truncate_to:]) for traj in similar_trajectories]
+    remaining_times_on_similar_trajectories = [sum(traj[last_defined_segment_index:]) for traj in similar_trajectories]
     seconds_away = sum(remaining_times_on_similar_trajectories) / len(similar_trajectories)
     return {'similar': similar_trajectories, 'seconds_away': seconds_away}
 
-def pairwise(iterable):
-    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-    a, b = tee(iterable)
-    next(b, None)
-    return izip(a, b)
 
 
 
@@ -278,3 +281,9 @@ def pairwise(iterable):
         raw_time -= abs(a_time - b_time)
 
     return distance / float(time.seconds)
+
+def pairwise(iterable):
+    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+    a, b = tee(iterable)
+    next(b, None)
+    return izip(a, b)

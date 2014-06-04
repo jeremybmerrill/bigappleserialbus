@@ -97,24 +97,28 @@ class BusStop(Base):
     for bus_key, bus in self.buses_on_route.items():
       #for buses that just passed us (and that ever got close enough to have a projected arrival time):
       if bus_key not in new_buses.keys() and bus.first_projected_arrival != 0.0:
-        error = bus.first_projected_arrival - time.time()
+        similar_error = bus.first_projected_arrival - time.time()
+        speeds_error  = bus.first_projected_arrival_speeds - time.time()
         #TODO: lol, when my comptuer goes to sleep, it picks up when it's done, so we get unrealistic errors
 
         # if self.route_name not in errors:
         #   errors[self.route_name] = {}
         # errors[self.route_name][vehicle_ref] = error
         # print(errors[self.route_name].values())
-        self.errors.append(error)
+        self.errors.append(speeds_error)
         avg_error = sum(self.errors) / len(self.errors)
         median_error = sorted(self.errors)[len(self.errors) / 2]
 
 
-        error_early_late = "early" if error > 0 else "late"
+        error_early_late_speed = "early" if speeds_error > 0 else "late"
+        error_early_late_sim = "early" if similar_error > 0 else "late"
+
         avg_early_late = "early" if avg_error > 0 else "late"
         median_early_late = "early" if median_error > 0 else "late"
 
-        print(remove_notice + "original projection for %(veh)s was incorrect, bus was %(sec)f seconds %(early_late)s" % 
-            {'sec': int(abs(error)), 'early_late': error_early_late, 'veh': bus.number})
+        print(remove_notice + "original projection for %(veh)s was incorrect, bus was %(sec)f seconds %(early_late)s by speed; %(secsim)f %(earlylatesim)s by similarity" % 
+            {'sec': int(abs(speeds_error)), 'early_late': error_early_late_speed, 'veh': bus.number,
+             'secsim': int(abs(similar_error)), 'earlylatesim': error_early_late_sim })
         print("bus %(name)s is, on average, %(avg_error)f seconds %(avg_early_late)s; median %(med)f %(median_early_late)s" % 
           {'avg_error': int(abs(avg_error)), 'name': self.route_name, 'med': int(abs(median_error)), 
           'avg_early_late': avg_early_late, 'median_early_late': median_early_late})
@@ -124,7 +128,7 @@ class BusStop(Base):
 
 
     for vehicle_ref, bus in self.buses_on_route.items():
-      seconds_away = bus.get_seconds_away()
+      speeds_seconds_away = bus.get_seconds_away()
       minutes_away = str(bus.get_minutes_away())[2:7]
       meters_away = bus.get_meters_away()
       miles_away = meters_to_miles(meters_away)
@@ -134,17 +138,17 @@ class BusStop(Base):
       similar_trajectories = bus.find_similar_trajectories()
       similar_seconds_away = similar_trajectories['seconds_away']
       print("bus %(name)s: %(sec)i secs away; %(secsim)i secs away from %(cnt)i similar trajectories" % 
-        {'name': self.route_name, 'sec': seconds_away, 'secsim': similar_seconds_away,
+        {'name': self.route_name, 'sec': speeds_seconds_away, 'secsim': similar_seconds_away,
          'cnt':len(similar_trajectories['similar']) } )
 
-      if seconds_away < self.too_late_to_catch_the_bus:
+      if speeds_seconds_away < self.too_late_to_catch_the_bus:
         # too close, won't make it.
         print(fail_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
             'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
           })
         continue
-      if seconds_away < self.time_to_go:
+      if speeds_seconds_away < self.time_to_go:
         turn_on_red_pin = True
         print(red_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
@@ -152,10 +156,11 @@ class BusStop(Base):
           })
         if bus.first_projected_arrival == 0.0:
           bus.first_projected_arrival = time.time() + similar_seconds_away
+          bus.first_projected_arrival_speeds = time.time() + speeds_seconds_away
         continue 
         # if a bus is within Time_to_go, it's necessarily within Time_to_get_ready, but I don't 
         # want it to trip the green pin too
-      if seconds_away < self.time_to_get_ready:
+      if speeds_seconds_away < self.time_to_get_ready:
         print(green_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
             'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
@@ -167,6 +172,7 @@ class BusStop(Base):
         #for calculating error:
         if bus.first_projected_arrival == 0.0:
           bus.first_projected_arrival = time.time() + similar_seconds_away
+          bus.first_projected_arrival_speeds = time.time() + speeds_seconds_away
     self.prep_for_writing()
     return ({self.green_pin: turn_on_green_pin, self.red_pin: turn_on_red_pin}, trajectories)
 
