@@ -69,7 +69,6 @@ if __name__ == "__main__":
         print("checking %(route_name)s (%(count)i buses on route)" % 
           {'route_name': stop.route_name, 'count': len(stop.buses_on_route) })
         busCheck, trajectories = stop.check()
-        print(trajectories)
         for traj in [traj for traj in trajectories if traj]:
           session.add(traj)
         for pin, val in busCheck.items():

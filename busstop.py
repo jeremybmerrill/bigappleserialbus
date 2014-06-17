@@ -7,7 +7,7 @@ import time
 from socket import error as SocketError
 from bus import Bus
 from trajectory import Trajectory, Base
-
+from operator import attrgetter
 
 from sqlalchemy import Column, ForeignKey, Integer, String, Text
 from sqlalchemy import orm
@@ -73,9 +73,9 @@ class BusStop(Base):
 
 
   def check(self):
-    vehicle_activities = self.get_locations()
-    turn_on_red_pin = False
-    turn_on_green_pin = False
+    vehicle_activities, check_timestamp = self.get_locations()
+    turn_on_red_light = False
+    turn_on_green_light = False
     new_buses = {}
     trajectories = []
     for activity in vehicle_activities:
@@ -92,13 +92,22 @@ class BusStop(Base):
       active_bus = new_buses[vehicle_ref]
 
       active_bus.add_observed_position(journey, activity["RecordedAtTime"])
-    print( map(lambda b: b.number, new_buses.values()))
+    print("new buses: " + ("["+', '.join(map(lambda b: b.number, new_buses.values())) + "]" if new_buses.values() else "[]"))
 
-    for bus_key, bus in self.buses_on_route.items():
-      #for buses that just passed us (and that ever got close enough to have a projected arrival time):
-      if bus_key not in new_buses.keys() and bus.first_projected_arrival != 0.0:
-        similar_error = bus.first_projected_arrival - time.time()
-        speeds_error  = bus.first_projected_arrival_speeds - time.time()
+    #for buses that just passed us (and that ever got close enough to have a projected arrival time):
+    for bus_key, bus_past_stop in self.buses_on_route.items():
+      if bus_key not in new_buses.keys() and bus_past_stop.first_projected_arrival != 0.0:
+
+        # when we never get a bus's data right when it arrives at the final stop, 
+        # instead, it just disappears. We need to interpolate that last position
+        # uses the latest recorded_at, because that's probably the best guess we have as to when the bus arrived at our stop.
+        if vehicle_activities:
+          most_recent_time = sorted([activity["RecordedAtTime"] for activity in vehicle_activities])[-1]
+        else:
+          most_recent_time = check_timestamp
+        bus_past_stop.fill_in_last_stop(most_recent_time)
+        similar_error = bus_past_stop.first_projected_arrival - time.time()
+        speeds_error  = bus_past_stop.first_projected_arrival_speeds - time.time()
         #TODO: lol, when my comptuer goes to sleep, it picks up when it's done, so we get unrealistic errors
 
         # if self.route_name not in errors:
@@ -117,13 +126,13 @@ class BusStop(Base):
         median_early_late = "early" if median_error > 0 else "late"
 
         print(remove_notice + "original projection for %(veh)s was incorrect, bus was %(sec)f seconds %(early_late)s by speed; %(secsim)f %(earlylatesim)s by similarity" % 
-            {'sec': int(abs(speeds_error)), 'early_late': error_early_late_speed, 'veh': bus.number,
+            {'sec': int(abs(speeds_error)), 'early_late': error_early_late_speed, 'veh': bus_past_stop.number,
              'secsim': int(abs(similar_error)), 'earlylatesim': error_early_late_sim })
         print("bus %(name)s is, on average, %(avg_error)f seconds %(avg_early_late)s; median %(med)f %(median_early_late)s" % 
           {'avg_error': int(abs(avg_error)), 'name': self.route_name, 'med': int(abs(median_error)), 
           'avg_early_late': avg_early_late, 'median_early_late': median_early_late})
         # print self.errors
-        trajectories.append(bus.convert_to_trajectory(self.route_name, self.stop_id)) #calculate the right columns.
+        trajectories.append(bus_past_stop.convert_to_trajectory(self.route_name, self.stop_id)) #calculate the right columns.
     self.buses_on_route = new_buses
 
 
@@ -137,23 +146,24 @@ class BusStop(Base):
 
       similar_trajectories = bus.find_similar_trajectories()
       similar_seconds_away = similar_trajectories['seconds_away']
-      print("bus %(name)s: %(sec)i secs away; %(secsim)i secs away from %(cnt)i similar trajectories" % 
-        {'name': self.route_name, 'sec': speeds_seconds_away, 'secsim': similar_seconds_away,
-         'cnt':len(similar_trajectories['similar']) } )
+      if similar_seconds_away > -1:
+        print("bus %(name)s: %(sec)i secs away; %(secsim)i secs away from %(cnt)i similar trajectories" % 
+          {'name': self.route_name, 'sec': speeds_seconds_away, 'secsim': similar_seconds_away,
+           'cnt':len(similar_trajectories['similar']) } )
 
       if speeds_seconds_away < self.too_late_to_catch_the_bus:
         # too close, won't make it.
-        print(fail_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
-          {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-            'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
-          })
+        # print(fail_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
+        #   {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
+        #     'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
+        #   })
         continue
       if speeds_seconds_away < self.time_to_go:
-        turn_on_red_pin = True
-        print(red_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
-          {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-            'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
-          })
+        turn_on_red_light = True
+        # print(red_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
+        #   {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
+        #     'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
+        #   })
         if bus.first_projected_arrival == 0.0:
           bus.first_projected_arrival = time.time() + similar_seconds_away
           bus.first_projected_arrival_speeds = time.time() + speeds_seconds_away
@@ -161,11 +171,11 @@ class BusStop(Base):
         # if a bus is within Time_to_go, it's necessarily within Time_to_get_ready, but I don't 
         # want it to trip the green pin too
       if speeds_seconds_away < self.time_to_get_ready:
-        print(green_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
-          {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-            'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
-          })
-        turn_on_green_pin = True
+        # print(green_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
+        #   {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
+        #     'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
+        #   })
+        turn_on_green_light = True
         # but if a second bus is close, I do want the green to go
         # even if there's a red bus nearby.
 
@@ -174,10 +184,11 @@ class BusStop(Base):
           bus.first_projected_arrival = time.time() + similar_seconds_away
           bus.first_projected_arrival_speeds = time.time() + speeds_seconds_away
     self.prep_for_writing()
-    return ({self.green_pin: turn_on_green_pin, self.red_pin: turn_on_red_pin}, trajectories)
+    return ({self.green_pin: turn_on_green_light, self.red_pin: turn_on_red_light}, trajectories)
 
   def prep_for_writing(self):
-    #TODO: remove
+    #TODO: figure out a cleaner way to do this.
+    self.errors = filter(lambda x: abs(x) < 3000, self.errors) #errors that big are spurious
     self.errors_serialized = ','.join(map(str, self.errors))
 
   def get_locations(self):
@@ -201,7 +212,7 @@ class BusStop(Base):
 
     jsonresp = response.read()
     resp = json.loads(jsonresp)
-    return resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"]
+    return (resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"], resp["Siri"]["ServiceDelivery"]["ResponseTimestamp"])
 
   def __repr__(self):
     return "<BusStop %(route)s #%(stop_id)s >" % {"route" : self.route_name, "number" : self.stop_id }
@@ -237,7 +248,6 @@ class BusStop(Base):
 
 #   # whenever one is created, note the estimated time til bus_stop
 #   # and whenever a bus arrives at the relevant stop, calculate error and stash it
-
 
 def meters_to_miles(meters):
   return meters / 1609.34
