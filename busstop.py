@@ -120,7 +120,7 @@ class BusStop:
       try:
         response = urllib2.urlopen(requestUrl)
         break
-      except urllib2.URLError, SocketError: 
+      except (urllib2.URLError, SocketError, BadStatusLine): 
         response = None
         time.sleep(10)
 
