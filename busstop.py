@@ -128,7 +128,11 @@ class BusStop:
       raise urllib2.URLError("Couldn't reach BusTime servers...")
 
     jsonresp = response.read()
-    resp = json.loads(jsonresp)
+    try: 
+      resp = json.loads(jsonresp)
+    except ValueError:
+      raise urllib2.URLError("Bad JSON: " + jsonresp)
+
     return resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"]
 
   def __repr__(self):
