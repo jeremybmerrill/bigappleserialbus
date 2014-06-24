@@ -1,6 +1,7 @@
 import os
 import json
 import urllib2
+from httplib import BadStatusLine
 from datetime import datetime, timedelta
 import time
 from socket import error as SocketError
@@ -120,7 +121,7 @@ class BusStop:
       try:
         response = urllib2.urlopen(requestUrl)
         break
-      except (urllib2.URLError, SocketError, BadStatusLine): 
+      except (urllib2.URLError, SocketError, httplib.BadStatusLine): 
         response = None
         time.sleep(10)
 
