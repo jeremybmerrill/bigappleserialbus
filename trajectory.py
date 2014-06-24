@@ -61,3 +61,7 @@ class Trajectory(Base):
     for index, segment_interval in enumerate(segment_intervals):
       column = "segment" + str(index)
       setattr(self, column, segment_interval)
+
+  @staticmethod
+  def to_time_vector(trajectory_time):
+    return (trajectory_time.weekday(), (trajectory_time.hour * 2) + (trajectory_time.minute / 30) )

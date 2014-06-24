@@ -88,7 +88,7 @@ class BusStop(Base):
       if vehicle_ref in self.buses_on_route:
         new_buses[vehicle_ref] = self.buses_on_route[vehicle_ref]
       else:
-        new_buses[vehicle_ref] = Bus(vehicle_ref, journey, self.route_name, self.db_session)
+        new_buses[vehicle_ref] = Bus(vehicle_ref, journey, self.route_name, self.stop_id, self.db_session)
       active_bus = new_buses[vehicle_ref]
 
       active_bus.add_observed_position(journey, activity["RecordedAtTime"])

@@ -51,12 +51,12 @@ if __name__ == "__main__":
       GPIO.setup(stop.red_pin, GPIO.OUT)
 
       #cycle the lights.
-      GPIO.output(stop.green_pin, True)
-      time.sleep(2)
-      GPIO.output(stop.green_pin, False)
       GPIO.output(stop.red_pin, True)
       time.sleep(2)
       GPIO.output(stop.red_pin, False)
+      GPIO.output(stop.green_pin, True)
+      time.sleep(2)
+      GPIO.output(stop.green_pin, False)
 
   #The MTA's bustime website pings every 15 seconds, so I feel comfortable doing the same.
   betweenChecks = 15 #seconds

@@ -12,16 +12,17 @@ from sqlalchemy import orm
 from numpy import vstack,array
 from numpy.random import rand
 from scipy.cluster.vq import kmeans,vq
+import kmodes
 
 default_bus_speed = 4 # m/s ~= 8 miles per hour
 
 #sometimes the bus, at the terminal where it starts, reports itself as, e.g. 0.2 meters along the route.
 #this is used to decide that, yes, it's still at the start of the route.
 max_gps_error = 20 #meters
-number_of_clusters = 10 #TODO: 5 is a magic number. choose it better.
+minimum_similar_trajectories = 10
 
 class Bus:
-  def __init__(self, number, journey, route_name, session):
+  def __init__(self, number, journey, route_name, end_stop_id, session):
     self.number = number
     self.time_location_pairs = []
 
@@ -31,6 +32,7 @@ class Bus:
     self.previous_bus_positions = []
     self.db_session = session
     self.route_name = route_name
+    self.end_stop_id = end_stop_id
 
     self.first_projected_arrival = 0
     self.first_projected_arrival_speeds = 0
@@ -203,23 +205,53 @@ class Bus:
     return segment_intervals  
 
   def find_similar_trajectories(self):
-    trajs = self.db_session.query(Trajectory.segment0,Trajectory.segment1,Trajectory.segment2,Trajectory.segment3,Trajectory.segment4,
+    trajs = self.db_session.query(Trajectory.start_time, Trajectory.segment0,Trajectory.segment1,Trajectory.segment2,Trajectory.segment3,Trajectory.segment4,
       Trajectory.segment5,Trajectory.segment6,Trajectory.segment7,Trajectory.segment8,Trajectory.segment9,Trajectory.segment10,
       Trajectory.segment11,Trajectory.segment12,Trajectory.segment13,Trajectory.segment14,Trajectory.segment15,
       Trajectory.segment16,Trajectory.segment17,Trajectory.segment18,Trajectory.segment19,Trajectory.segment20,
       Trajectory.segment21,Trajectory.segment22,Trajectory.segment23,Trajectory.segment24,Trajectory.segment25,
       Trajectory.segment26,Trajectory.segment27,Trajectory.segment28,Trajectory.segment29,Trajectory.segment30,
       Trajectory.segment31,Trajectory.segment32,Trajectory.segment33,Trajectory.segment34,Trajectory.segment35,
-      Trajectory.segment36,Trajectory.segment37,Trajectory.segment38,Trajectory.segment39).filter(Trajectory.route_name==self.route_name)
+      Trajectory.segment36,Trajectory.segment37,Trajectory.segment38,Trajectory.segment39).filter(Trajectory.route_name==self.route_name).filter(Trajectory.end_stop_id == self.end_stop_id)
     
     # TODO: before filtering based on similarity by segments, filter by time.
 
+    similar_trajectories_by_time = self.filter_by_time(trajs)
+    similar_trajectories_by_time = [traj[1:] for traj in similar_trajectories_by_time] #remove the time item.
+
+    similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, 10)
+    if len(similar_trajectories) < minimum_similar_trajectories:
+      similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, 5)
+
+    if not similar_trajectories:
+      return {'similar': [], 'seconds_away': -1}
+
+    segment_intervals = self.segment_intervals()
+    last_defined_segment_index = segment_intervals.index(None) if None in segment_intervals else len(segment_intervals)
+    # average time-to-home-stop of the similar trajectories
+    remaining_times_on_similar_trajectories = [sum(traj[last_defined_segment_index:]) for traj in similar_trajectories]
+    seconds_away = sum(remaining_times_on_similar_trajectories) / len(similar_trajectories)
+    return {'similar': similar_trajectories, 'seconds_away': seconds_away}
+
+  def filter_by_time(self, trajs):
+    # ffkmodes = kmodes.FuzzyCentroidsKModes(5, alpha=1.8)
+    # ffkmodes.cluster(x)
+    # how do I represent trajectories based on time?
+
+    #I think kmodes is dumb. 
+    # time_trajs = [Trajectory.to_time_vector(traj.start_time) for traj in trajs]
+    # ffkmodes = kmodes.KModes(5)
+    # ffkmodes.cluster(time_trajs)
+    # traj.start_time.weekday()
+    return trajs
+
+  def filter_by_segment_intervals(self, trajs, number_of_clusters):
     truncate_trajs_to = trajs[0].index(None)
     trajs = [traj[:truncate_trajs_to] for traj in trajs]
 
     segment_intervals = self.segment_intervals()
     if segment_intervals is None or all([seg is None for seg in  segment_intervals]):
-      return {'similar': [], 'seconds_away': -1}
+      return []
     #truncate to last defined point of this bus (i.e. where it is now) to find similar trajectories _so far_.
     print('%(bus_name)s segment_intervals: ' % {'bus_name': self.number} + ', '.join(map(str, segment_intervals)))
     last_defined_segment_index = segment_intervals.index(None) if None in segment_intervals else len(segment_intervals)
@@ -227,21 +259,14 @@ class Bus:
     centroids,_ = kmeans(truncated_trajectories, number_of_clusters) 
     cluster_indices,_ = vq(truncated_trajectories,centroids)
 
-
     truncated_segment_intervals = segment_intervals[:last_defined_segment_index]
     my_cluster_index, _ = vq(array([truncated_segment_intervals]), centroids)
     my_cluster_index = my_cluster_index[0]
     print("clusters: [%(sizes)s]" % 
       {"sizes": ', '.join([str(cluster_indices.tolist().count(idx)) + ("*" if idx == my_cluster_index else "") for idx in set(sorted(cluster_indices))])})
     similar_trajectories = [traj for i, traj in enumerate(trajs) if cluster_indices[i] == my_cluster_index]
-    # print("similar traj", similar_trajectories)
-    # print("len(trajs)", len(trajs))
-    # average time-to-home-stop of the similar trajectories
-    remaining_times_on_similar_trajectories = [sum(traj[last_defined_segment_index:]) for traj in similar_trajectories]
-    seconds_away = sum(remaining_times_on_similar_trajectories) / len(similar_trajectories)
-    return {'similar': similar_trajectories, 'seconds_away': seconds_away}
 
-
+    return similar_trajectories
 
 
 #TODO: erase all of this below here (at this indent level)
