@@ -202,20 +202,19 @@ class BusStop(Base):
     for i in xrange(0,4):
       try:
         response = urllib2.urlopen(requestUrl)
-        break
+        #this only happens if the attempt to get the data fails 4 times.
+        if not response:
+          raise urllib2.URLError("Couldn't reach BusTime servers...")
+
+        jsonresp = response.read()
+        try: 
+          resp = json.loads(jsonresp)
+        except ValueError:
+          raise urllib2.URLError("Bad JSON: " + jsonresp)
+            break
       except (urllib2.URLError, SocketError, httplib.BadStatusLine): 
         response = None
         time.sleep(10)
-
-    #this only happens if the attempt to get the data fails 4 times.
-    if not response:
-      raise urllib2.URLError("Couldn't reach BusTime servers...")
-
-    jsonresp = response.read()
-    try: 
-      resp = json.loads(jsonresp)
-    except ValueError:
-      raise urllib2.URLError("Bad JSON: " + jsonresp)
 
     return (resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"], resp["Siri"]["ServiceDelivery"]["ResponseTimestamp"])
 
