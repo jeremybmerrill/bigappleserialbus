@@ -203,7 +203,7 @@ class BusStop(Base):
       try:
         response = urllib2.urlopen(requestUrl)
         break
-      except (urllib2.URLError, SocketError, BadStatusLine):
+      except (urllib2.URLError, SocketError, httplib.BadStatusLine): 
         response = None
         time.sleep(10)
 
@@ -212,7 +212,11 @@ class BusStop(Base):
       raise urllib2.URLError("Couldn't reach BusTime servers...")
 
     jsonresp = response.read()
-    resp = json.loads(jsonresp)
+    try: 
+      resp = json.loads(jsonresp)
+    except ValueError:
+      raise urllib2.URLError("Bad JSON: " + jsonresp)
+
     return (resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"], resp["Siri"]["ServiceDelivery"]["ResponseTimestamp"])
 
   def __repr__(self):
