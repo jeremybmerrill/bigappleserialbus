@@ -1,0 +1,5 @@
+--index-url https://pypi.python.org/simple/
+
+sqlalchemy>=0.9.4
+numpy>=1.8.1
+scipy>=0.13.3
