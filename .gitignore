@@ -1,6 +1,7 @@
 config.yaml
 apikey.txt
 ledSpecs.txt
+buses.db
 
 #added automatically by github
 *.py[cod]
