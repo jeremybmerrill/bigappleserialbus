@@ -211,7 +211,8 @@ class BusStop(Base):
           resp = json.loads(jsonresp)
         except ValueError:
           raise urllib2.URLError("Bad JSON: " + jsonresp)
-            break
+        finally:
+          break
       except (urllib2.URLError, SocketError, httplib.BadStatusLine): 
         response = None
         time.sleep(10)
