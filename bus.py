@@ -218,6 +218,8 @@ class Bus:
 
     similar_trajectories_by_time = self.filter_by_time(trajs)
     similar_trajectories_by_time = [traj[1:] for traj in similar_trajectories_by_time] #remove the time item.
+    if not similar_trajectories_by_time:
+      return {'similar': [], 'seconds_away': -1}
 
     similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, 10)
     if len(similar_trajectories) < minimum_similar_trajectories:
