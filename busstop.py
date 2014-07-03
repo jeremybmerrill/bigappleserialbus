@@ -213,10 +213,13 @@ class BusStop(Base):
           raise urllib2.URLError("Bad JSON: " + jsonresp)
         finally:
           break
-      except (urllib2.URLError, SocketError, httplib.BadStatusLine): 
+      except (urllib2.URLError, SocketError, httplib.BadStatusLine) as e: 
         response = None
+        resp = error
+        error = e
         time.sleep(10)
-
+    if not resp:
+      raise e
     return (resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"], resp["Siri"]["ServiceDelivery"]["ResponseTimestamp"])
 
   def __repr__(self):
