@@ -214,7 +214,7 @@ class BusStop(Base):
           raise urllib2.URLError("Bad JSON: " + jsonresp)
         finally:
           break
-      except (urllib2.URLError, SocketError, httplib.BadStatusLine) as e: 
+      except (urllib2.URLError, SocketError, BadStatusLine) as e: 
         response = None
         resp = error
         error = e
