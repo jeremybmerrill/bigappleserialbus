@@ -199,6 +199,7 @@ class BusStop(Base):
 
     requestUrl = "http://bustime.mta.info/api/siri/stop-monitoring.json?key=%(key)s&OperatorRef=MTA&MonitoringRef=%(stop)s&StopMonitoringDetailLevel=%(onw)s" %\
             {'key': self.mta_key, 'stop': self.stop_id, 'onw': 'calls'}
+    resp = None
     for i in xrange(0,4):
       try:
         response = urllib2.urlopen(requestUrl)

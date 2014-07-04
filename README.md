@@ -10,7 +10,7 @@ install
 
 1. ssh to your pi
 2. git clone https://github.com/jeremybmerrill/bigappleserialbus.git
-3. sudo pip install pyyaml # you might need to `sudo apt-get install python-pip`
+3. `pip install -r requirements.txt`
 3. get a BusTime API key from the MTA [here](https://spreadsheets.google.com/viewform?hl=en&formkey=dG9kcGIxRFpSS0NhQWM4UjA0V0VkNGc6MQ#gid=0)
 4. create a file called apikey.txt that contains your API key, optionally followed by a newline.
 5. create a file called config.yaml, modeled after config-example.yaml. 
