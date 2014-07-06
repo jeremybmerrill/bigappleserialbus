@@ -216,11 +216,11 @@ class BusStop(Base):
           break
       except (urllib2.URLError, SocketError, BadStatusLine) as e: 
         response = None
-        resp = error
+        resp = None
         error = e
         time.sleep(10)
     if not resp:
-      raise e
+      raise error
     return (resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"], resp["Siri"]["ServiceDelivery"]["ResponseTimestamp"])
 
   def __repr__(self):
