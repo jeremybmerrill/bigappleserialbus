@@ -188,6 +188,8 @@ class Bus:
 
     traj = Trajectory(route_name, stop_id, self.start_time)
     traj.set_segment_intervals(segment_intervals)
+    traj.green_light_time = self.green_light_time
+    traj.red_light_time = self.red_light_time
     return traj
 
   def segment_intervals(self):
@@ -270,8 +272,20 @@ class Bus:
 
     return similar_trajectories
 
+  #called when a bus's lights are turned off, when there's not time to make it to the bus
+  def too_late(self):
+    pass
+
+  #called when a bus's lights are turned red, when there's just enough time to make it to the bus
+  def red_light(self):
+    self.red_light_time = self.previous_bus_positions[-1]['recorded_at']
+
+  #called when a bus's lights are turned green, when it's time to get ready to go to the bus
+  def green_light(self):
+    self.green_light_time = self.previous_bus_positions[-1]['recorded_at']
 
 #TODO: erase all of this below here (at this indent level)
+
 
 
   def get_meters_away(self):

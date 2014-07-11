@@ -1,5 +1,4 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Text, DateTime
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -51,6 +50,8 @@ class Trajectory(Base):
   segment37 = Column(Integer, nullable=True)
   segment38 = Column(Integer, nullable=True)
   segment39 = Column(Integer, nullable=True)
+  green_light_time = Column(DateTime, nullable=True)
+  red_light_time = Column(DateTime, nullable=True)
 
   def __init__(self, route_name, stop_id, start_time):
     self.route_name = route_name

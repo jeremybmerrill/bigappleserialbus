@@ -151,15 +151,17 @@ class BusStop(Base):
           {'name': self.route_name, 'sec': speeds_seconds_away, 'secsim': similar_seconds_away,
            'cnt':len(similar_trajectories['similar']) } )
 
-      if speeds_seconds_away < self.too_late_to_catch_the_bus:
+      if similar_seconds_away < self.too_late_to_catch_the_bus:
         # too close, won't make it.
         # print(fail_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
         #   {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
         #     'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
         #   })
+        bus.too_late()
         continue
-      if speeds_seconds_away < self.time_to_go:
+      if similar_seconds_away < self.time_to_go:
         turn_on_red_light = True
+        bus.red_light()
         # print(red_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
         #   {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
         #     'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
@@ -170,12 +172,13 @@ class BusStop(Base):
         continue 
         # if a bus is within Time_to_go, it's necessarily within Time_to_get_ready, but I don't 
         # want it to trip the green pin too
-      if speeds_seconds_away < self.time_to_get_ready:
+      if similar_seconds_away < self.time_to_get_ready:
         # print(green_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
         #   {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
         #     'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
         #   })
         turn_on_green_light = True
+        bus.green_light()
         # but if a second bus is close, I do want the green to go
         # even if there's a red bus nearby.
 
@@ -200,6 +203,7 @@ class BusStop(Base):
     requestUrl = "http://bustime.mta.info/api/siri/stop-monitoring.json?key=%(key)s&OperatorRef=MTA&MonitoringRef=%(stop)s&StopMonitoringDetailLevel=%(onw)s" %\
             {'key': self.mta_key, 'stop': self.stop_id, 'onw': 'calls'}
     resp = None
+    error = None
     for i in xrange(0,4):
       try:
         response = urllib2.urlopen(requestUrl)
