@@ -81,9 +81,6 @@ class BusStop(Base):
     for activity in vehicle_activities:
       journey = activity["MonitoredVehicleJourney"]
 
-      #TODO: unless we have all of them.
-      # self.set_previous_calls(journey)
-
       vehicle_ref = journey["VehicleRef"]
       if vehicle_ref in self.buses_on_route:
         new_buses[vehicle_ref] = self.buses_on_route[vehicle_ref]
@@ -229,6 +226,19 @@ class BusStop(Base):
 
   def __repr__(self):
     return "<BusStop %(route)s #%(stop_id)s >" % {"route" : self.route_name, "number" : self.stop_id }
+  def __cmp__(self, other):
+    # Should return a negative integer if self < other, zero if self == other, a positive integer if self > other.
+    if self.route_name > other.route_name:
+      return 1
+    elif self.route_name < other.route_name:
+      return -1
+    else:
+      if self.stop_id > other.stop_id:
+        return 1
+      elif self.stop_id < other.stop_id:
+        return -1
+      else:
+        return 0
 
 
   # potentially dead code.

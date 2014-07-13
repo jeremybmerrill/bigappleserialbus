@@ -36,7 +36,7 @@ if __name__ == "__main__":
   config_file_path = os.path.join(os.path.dirname(__file__), "config.yaml")
   config = yaml.load(open(config_file_path, 'r'))
   bus_stops = []
-  for info in config["stops"]:
+  for info in sorted(config["stops"]):
     busName = info["route_name"]
     stop_id = info["stop"]
     #find or create stop
