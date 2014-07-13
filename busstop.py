@@ -226,20 +226,6 @@ class BusStop(Base):
 
   def __repr__(self):
     return "<BusStop %(route)s #%(stop_id)s >" % {"route" : self.route_name, "number" : self.stop_id }
-  def __cmp__(self, other):
-    # Should return a negative integer if self < other, zero if self == other, a positive integer if self > other.
-    if self.route_name > other.route_name:
-      return 1
-    elif self.route_name < other.route_name:
-      return -1
-    else:
-      if self.stop_id > other.stop_id:
-        return 1
-      elif self.stop_id < other.stop_id:
-        return -1
-      else:
-        return 0
-
 
   # potentially dead code.
   def set_previous_calls(self, journey):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from operator import itemgetter
 import time
 from busstop import BusStop
 from onpi import is_on_pi
@@ -36,7 +36,7 @@ if __name__ == "__main__":
   config_file_path = os.path.join(os.path.dirname(__file__), "config.yaml")
   config = yaml.load(open(config_file_path, 'r'))
   bus_stops = []
-  for info in sorted(config["stops"], reverse=True):
+  for info in sorted(config["stops"], cmp=lambda x, y: cmp(x["stop"], y["stop"]) if x["route_name"] == y["route_name"] else cmp(x["route_name"], y["route_name"]) ):
     busName = info["route_name"]
     stop_id = info["stop"]
     #find or create stop
