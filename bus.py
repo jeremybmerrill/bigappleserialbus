@@ -33,6 +33,8 @@ class Bus:
     self.db_session = session
     self.route_name = route_name
     self.end_stop_id = end_stop_id
+    self.red_light_time = None
+    self.green_light_time = None
 
     self.first_projected_arrival = 0
     self.first_projected_arrival_speeds = 0
