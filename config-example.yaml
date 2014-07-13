@@ -1,6 +1,6 @@
 stops:
-  b63:
+  - route_name: b63
     stop: MTA_308000
-    distance: 30 #seconds to the bus stop once you're out of the apt
+    distance: 30 #seconds to the bus stop once we're out of the apt
     redPin: 18
     greenPin: 23

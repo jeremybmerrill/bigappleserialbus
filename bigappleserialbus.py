@@ -36,7 +36,8 @@ if __name__ == "__main__":
   config_file_path = os.path.join(os.path.dirname(__file__), "config.yaml")
   config = yaml.load(open(config_file_path, 'r'))
   bus_stops = []
-  for busName, info in config["stops"].items():
+  for info in config["stops"]:
+    busName = info["route_name"]
     stop_id = info["stop"]
     #find or create stop
     stop = session.query(BusStop).filter(BusStop.stop_id == stop_id).filter(BusStop.route_name == busName).first()
