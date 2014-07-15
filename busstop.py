@@ -200,7 +200,6 @@ class BusStop(Base):
     requestUrl = "http://bustime.mta.info/api/siri/stop-monitoring.json?key=%(key)s&OperatorRef=MTA&MonitoringRef=%(stop)s&StopMonitoringDetailLevel=%(onw)s" %\
             {'key': self.mta_key, 'stop': self.stop_id, 'onw': 'calls'}
     resp = None
-    error = None
     for i in xrange(0,4):
       try:
         response = urllib2.urlopen(requestUrl)
@@ -218,10 +217,9 @@ class BusStop(Base):
       except (urllib2.URLError, SocketError, BadStatusLine) as e: 
         response = None
         resp = None
-        error = e
+        if i == 3:
+          raise
         time.sleep(10)
-    if not resp:
-      raise error
     return (resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"], resp["Siri"]["ServiceDelivery"]["ResponseTimestamp"])
 
   def __repr__(self):
