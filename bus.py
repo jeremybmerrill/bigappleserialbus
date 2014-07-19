@@ -341,6 +341,8 @@ class Bus:
     end = self.time_location_pairs[end_index]
     distance = float(abs(start[1] - end[1]))
     time = abs(start[0] - end[0])
+    if time.seconds = 0:
+      return 0
     return distance / float(time.seconds)
 
   def less_naive_speed(self, start_index, end_index):
