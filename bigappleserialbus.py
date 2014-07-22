@@ -31,7 +31,7 @@ if __name__ == "__main__":
   if am_on_pi:
     import RPi.GPIO as GPIO
     GPIO.setmode(GPIO.BCM)
-    print("am running on a Raspberry Pi")
+    logging.debug("am running on a Raspberry Pi")
 
   config_file_path = os.path.join(os.path.dirname(__file__), "config.yaml")
   config = yaml.load(open(config_file_path, 'r'))
@@ -67,7 +67,7 @@ if __name__ == "__main__":
       start_time = time.time()
       pins = {}
       for stop in bus_stops:
-        print("checking %(route_name)s (%(count)i buses on route)" % 
+        logging.debug("checking %(route_name)s (%(count)i buses on route)" % 
           {'route_name': stop.route_name, 'count': len(stop.buses_on_route) })
         busCheck, trajectories = stop.check()
         for traj in [traj for traj in trajectories if traj]:
@@ -79,9 +79,9 @@ if __name__ == "__main__":
           GPIO.output(pin, val)
         if val:
           if am_on_pi:
-            print("illuminating pin #%(pinNum)d" % {'pinNum': pin})
+            logging.debug("illuminating pin #%(pinNum)d" % {'pinNum': pin})
           # else:
-          #   print("would illuminate pin #%(pinNum)d" % {'pinNum': pin})
+          #   logging.debug("would illuminate pin #%(pinNum)d" % {'pinNum': pin})
       session.commit()
       duration = time.time() - start_time
       time.sleep(max(betweenChecks - duration, 0))

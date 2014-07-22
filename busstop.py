@@ -219,8 +219,13 @@ class BusStop(Base):
         resp = None
         if i == 3:
           raise
-        time.sleep(10)
-    return (resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"], resp["Siri"]["ServiceDelivery"]["ResponseTimestamp"])
+        time.sleep(10 * i)
+    try:
+      return (resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"], resp["Siri"]["ServiceDelivery"]["ResponseTimestamp"])
+    except TypeError:
+      print(resp)
+      raise
+
 
   def __repr__(self):
     return "<BusStop %(route)s #%(stop_id)s >" % {"route" : self.route_name, "number" : self.stop_id }
