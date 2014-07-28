@@ -12,27 +12,20 @@ from operator import attrgetter
 from sqlalchemy import Column, ForeignKey, Integer, String, Text
 from sqlalchemy import orm
 # from sqlalchemy import create_engine
-
+from terminal_colors import green_code, red_code, yellow_code, blue_code, end_color
 
 time_to_get_ready = 240 # seconds
 time_to_go = 180 #seconds
 seconds_to_sidewalk = 60 #seconds
 
-greencode = '\033[92m'
-redcode = '\033[91m'
-yellowcode = '\033[93m'
-bluecode = "\033[34m"
-endcolor = '\033[0m'
-
-green_notice = greencode + "[green]" + endcolor + " "
-red_notice = redcode + "[red]" + endcolor + " "
-fail_notice = yellowcode + "[FAIL]" + endcolor + " "
-remove_notice = bluecode + "[removed]" + endcolor + " "
+green_notice = green_code + "[green]" + end_color + " "
+red_notice = red_code + "[red]" + end_color + " "
+fail_notice = yellow_code + "[FAIL]" + end_color + " "
+remove_notice = blue_code + "[removed]" + end_color + " "
 apikey_path = os.path.join(os.path.dirname(__file__), "apikey.txt")
 mta_api_key = open(apikey_path, 'r').read().strip()
 
 errors = {}
-
 
 # store in database green-light-on times and  actual arrival times
 # to calculate avg error
@@ -50,6 +43,7 @@ class BusStop(Base):
     self.buses_on_route = {}
     self.previous_stops = [] #TODO: get these from the db somehow
 
+
   @orm.reconstructor
   def init_on_load(self):
     self.lineRef = "MTA NYCT_" + self.route_name.upper()
@@ -60,22 +54,23 @@ class BusStop(Base):
     else:
       self.errors = []
 
-  # non-persistant attributes
-  def add_attributes(self, stop_seconds_away, red_pin, green_pin, session):
-    self.red_pin = red_pin
-    self.green_pin = green_pin
+  def add_attributes(self, stop_seconds_away, session):
+    """Set non-persistant variables."""
     self.too_late_to_catch_the_bus = stop_seconds_away + seconds_to_sidewalk
     self.time_to_get_ready = stop_seconds_away + (time_to_get_ready + time_to_go) + seconds_to_sidewalk
     self.time_to_go = stop_seconds_away + time_to_go + seconds_to_sidewalk
     self.db_session = session
-
-    #get previous stops using "&StopMonitoringDetailLevel=calls"
-
+    self.bus_is_near = False
+    self.bus_is_imminent = False
+    self.status_error = False
 
   def check(self):
-    vehicle_activities, check_timestamp = self.get_locations()
-    turn_on_red_light = False
-    turn_on_green_light = False
+    vehicle_activities, check_timestamp, success = self.get_locations()
+    if not success:
+      self.status_error
+      return []
+    self.bus_is_imminent = False
+    self.bus_is_near = False
     new_buses = {}
     trajectories = []
     for activity in vehicle_activities:
@@ -157,8 +152,8 @@ class BusStop(Base):
         bus.too_late()
         continue
       if similar_seconds_away < self.time_to_go:
-        turn_on_red_light = True
-        bus.red_light()
+        self.bus_is_imminent = True
+        bus.imminent()
         # print(red_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
         #   {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
         #     'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
@@ -174,8 +169,8 @@ class BusStop(Base):
         #   {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
         #     'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
         #   })
-        turn_on_green_light = True
-        bus.green_light()
+        self.bus_is_near = True
+        bus.near()
         # but if a second bus is close, I do want the green to go
         # even if there's a red bus nearby.
 
@@ -183,8 +178,9 @@ class BusStop(Base):
         if bus.first_projected_arrival == 0.0:
           bus.first_projected_arrival = time.time() + similar_seconds_away
           bus.first_projected_arrival_speeds = time.time() + speeds_seconds_away
+
     self.prep_for_writing()
-    return ({self.green_pin: turn_on_green_light, self.red_pin: turn_on_red_light}, trajectories)
+    return trajectories
 
   def prep_for_writing(self):
     #TODO: figure out a cleaner way to do this.
@@ -212,23 +208,42 @@ class BusStop(Base):
           resp = json.loads(jsonresp)
         except ValueError:
           raise urllib2.URLError("Bad JSON: " + jsonresp)
+        except Exception as e:
+          raise e
         finally:
+          if i > 0:
+            print("getting data failed before, but worked this time")
           break
       except (urllib2.URLError, SocketError, BadStatusLine) as e: 
+        print("getting data failed, trying again (%(i)i/4)" % {'i': i+1})
         response = None
         resp = None
         if i == 3:
-          raise
+          print("getting data failed 4 times")
+          return (None, None, False)
         time.sleep(10 * i)
-    try:
-      return (resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"], resp["Siri"]["ServiceDelivery"]["ResponseTimestamp"])
-    except TypeError:
-      print(resp)
-      raise
+    else:
+      return (None, None, False)
+    vehicle_activities = resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"]
+    check_timestamp = resp["Siri"]["ServiceDelivery"]["ResponseTimestamp"]
+    return (vehicle_activities, check_timestamp, True)
 
+  def status(self):
+    if self.status_error:
+      return yellow_code + "!!" + end_color
+    line = ''
+    if self.bus_is_imminent:
+      line += red_code + 'R' + end_color
+    else:
+      line += '-'
+    if self.bus_is_near:
+      line += green_code + 'G' + green_color
+    else:
+      line += '-'
+    return line
 
   def __repr__(self):
-    return "<BusStop %(route)s #%(stop_id)s >" % {"route" : self.route_name, "number" : self.stop_id }
+    return "<BusStop %(route)s #%(stop_id)s %(status) >" % {"route" : self.route_name, "number" : self.stop_id, 'status': self.status() }
 
   # potentially dead code.
   def set_previous_calls(self, journey):

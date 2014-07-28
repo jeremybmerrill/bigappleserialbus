@@ -15,7 +15,6 @@ from scipy.cluster.vq import kmeans,vq
 import kmodes
 
 default_bus_speed = 4 # m/s ~= 8 miles per hour
-
 #sometimes the bus, at the terminal where it starts, reports itself as, e.g. 0.2 meters along the route.
 #this is used to decide that, yes, it's still at the start of the route.
 max_gps_error = 20 #meters
@@ -279,11 +278,11 @@ class Bus:
     pass
 
   #called when a bus's lights are turned red, when there's just enough time to make it to the bus
-  def red_light(self):
+  def imminent(self):
     self.red_light_time = self.previous_bus_positions[-1]['recorded_at']
 
   #called when a bus's lights are turned green, when it's time to get ready to go to the bus
-  def green_light(self):
+  def near(self):
     self.green_light_time = self.previous_bus_positions[-1]['recorded_at']
 
 #TODO: erase all of this below here (at this indent level)
