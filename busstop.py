@@ -84,7 +84,7 @@ class BusStop(Base):
       active_bus = new_buses[vehicle_ref]
 
       active_bus.add_observed_position(journey, activity["RecordedAtTime"])
-    print("new buses: " + ("["+', '.join(map(lambda b: b.number, new_buses.values())) + "]" if new_buses.values() else "[]"))
+    print(self.route_name + " buses: " + ("["+', '.join(map(lambda b: b.number, new_buses.values())) + "]" if new_buses.values() else "[]"))
 
     #for buses that just passed us (and that ever got close enough to have a projected arrival time):
     for bus_key, bus_past_stop in self.buses_on_route.items():
@@ -129,17 +129,20 @@ class BusStop(Base):
 
 
     for vehicle_ref, bus in self.buses_on_route.items():
+      similar_trajectories = bus.find_similar_trajectories()
+
+      similar_seconds_away = similar_trajectories['seconds_away']
       speeds_seconds_away = bus.get_seconds_away()
-      minutes_away = str(bus.get_minutes_away())[2:7]
+
+      minutes_away = seconds_to_minutes(similar_seconds_away) # instant speed-based: str(bus.get_minutes_away())[2:7]
       meters_away = bus.get_meters_away()
       miles_away = meters_to_miles(meters_away)
-      speed = bus.get_speed_mps()
       mph = bus.get_speed_mph()
 
-      similar_trajectories = bus.find_similar_trajectories()
-      similar_seconds_away = similar_trajectories['seconds_away']
-      if similar_seconds_away > -1:
-        print("bus %(name)s/%(veh)s: %(sec)i secs away; %(secsim)i secs away from %(cnt)i similar trajectories" % 
+      if similar_seconds_away <= -1:
+        continue
+      else:
+        print("bus %(name)s/%(veh)s: %(secsim)i secs away from %(cnt)i similar trajectories" % 
           {'name': self.route_name, 'sec': speeds_seconds_away, 'secsim': similar_seconds_away,
            'cnt':len(similar_trajectories['similar']), 'veh': vehicle_ref })
 
@@ -278,3 +281,7 @@ class BusStop(Base):
 
 def meters_to_miles(meters):
   return meters / 1609.34
+
+
+def seconds_to_minutes(seconds):
+  return timedelta(seconds=seconds)
