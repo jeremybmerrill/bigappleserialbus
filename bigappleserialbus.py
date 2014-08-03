@@ -6,6 +6,7 @@ from onpi import is_on_pi
 import yaml
 import os
 from ticker import Ticker
+import traceback
 
 from terminal_colors import green_code, red_code, yellow_code, blue_code, end_color
 
@@ -126,7 +127,7 @@ class BigAppleSerialBus:
 
   def __global_error__(self, error):
     self.session.commit()
-    logging.exception('Got exception on main handler')
+    logging.exception('Error:')
     if self.is_on_pi:
       light_pairs = self.lights.values()
       #turn off all the lights.
