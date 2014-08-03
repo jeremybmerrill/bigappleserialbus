@@ -129,7 +129,7 @@ class BigAppleSerialBus:
     self.session.commit()
     logging.exception('Got exception on main handler')
     if self.is_on_pi:
-      light_pairs = [obj.values() for obj in self.lights.values()]
+      light_pairs = self.lights.values()
       #turn off all the lights.
       for red_light in [light_pair['red'] for light_pair in light_pairs]:
         GPIO.output(red_light.pin, False)
