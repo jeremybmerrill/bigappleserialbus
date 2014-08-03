@@ -86,7 +86,6 @@ class BigAppleSerialBus:
     if bus_stop.status_error:
       [light.toggle() for light in self.lights[bus_stop]]
     else:
-      print(self.lights)
       if bus_stop.bus_is_near:
         self.lights[bus_stop]['green'].on()
       else:
@@ -132,15 +131,15 @@ class BigAppleSerialBus:
       light_pairs = self.lights.values()
       #turn off all the lights.
       for red_light in [light_pair['red'] for light_pair in light_pairs]:
-        GPIO.output(red_light.pin, False)
+        red_light.off()
 
       #then blink red to signal a global error condition
       while True:
         for red_light in [light_pair['red'] for light_pair in light_pairs]:
-          GPIO.output(stop.red_pin, True)
+          red_light.on()
         time.sleep(5)
         for red_light in [light_pair['red'] for light_pair in light_pairs]:
-          GPIO.output(stop.red_pin, False)
+          red_light.off()
         time.sleep(5)
     else:
       raise error
