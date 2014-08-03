@@ -21,7 +21,6 @@ from busstop import Base
 
 
 
-
 class BigAppleSerialBus:
   is_on_pi = False
   lights = {}
@@ -115,9 +114,9 @@ class BigAppleSerialBus:
   def __cycle_lights__(self):
     flat_lights = [item for sublist in [d.values() for d in self.lights.values()] for item in sublist]
     for light in flat_lights:
-      GPIO.output(light.pin, True)
+      light.on()
       time.sleep(2)
-      GPIO.output(light.pin, False)
+      light.off()
 
   def __init_ticker__(self):
     ticker = Ticker()
