@@ -237,7 +237,7 @@ class BusStop(Base):
     else:
       line += '-'
     if self.bus_is_near:
-      line += green_code + 'G' + green_color
+      line += green_code + 'G' + end_color
     else:
       line += '-'
     return line
