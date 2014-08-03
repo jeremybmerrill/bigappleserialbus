@@ -121,6 +121,7 @@ class BigAppleSerialBus:
   def __init_ticker__(self):
     ticker = Ticker()
     ticker.register(self.check_buses, self.between_checks)
+    #TODO: only print new status on non-15-sec ticks if it hasn't changed
     ticker.register(self.broadcast_status, self.between_status_updates)
     ticker.global_error(self.__global_error__)
     ticker.start()

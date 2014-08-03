@@ -139,25 +139,25 @@ class BusStop(Base):
       similar_trajectories = bus.find_similar_trajectories()
       similar_seconds_away = similar_trajectories['seconds_away']
       if similar_seconds_away > -1:
-        print("bus %(name)s: %(sec)i secs away; %(secsim)i secs away from %(cnt)i similar trajectories" % 
+        print("bus %(name)s/%(veh)s: %(sec)i secs away; %(secsim)i secs away from %(cnt)i similar trajectories" % 
           {'name': self.route_name, 'sec': speeds_seconds_away, 'secsim': similar_seconds_away,
-           'cnt':len(similar_trajectories['similar']) } )
+           'cnt':len(similar_trajectories['similar']), 'veh': vehicle_ref })
 
       if similar_seconds_away < self.too_late_to_catch_the_bus:
         # too close, won't make it.
-        # print(fail_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
-        #   {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-        #     'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
-        #   })
+        print(fail_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
+          {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
+            'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
+          })
         bus.too_late()
         continue
       if similar_seconds_away < self.time_to_go:
         self.bus_is_imminent = True
         bus.imminent()
-        # print(red_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
-        #   {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-        #     'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
-        #   })
+        print(red_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
+          {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
+            'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
+          })
         if bus.first_projected_arrival == 0.0:
           bus.first_projected_arrival = time.time() + similar_seconds_away
           bus.first_projected_arrival_speeds = time.time() + speeds_seconds_away
@@ -165,10 +165,10 @@ class BusStop(Base):
         # if a bus is within Time_to_go, it's necessarily within Time_to_get_ready, but I don't 
         # want it to trip the green pin too
       if similar_seconds_away < self.time_to_get_ready:
-        # print(green_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
-        #   {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-        #     'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
-        #   })
+        print(green_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
+          {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
+            'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
+          })
         self.bus_is_near = True
         bus.near()
         # but if a second bus is close, I do want the green to go

@@ -85,9 +85,9 @@ class Bus:
       if self.stop_time_pairs[previous_stop] is None:
         distance_traveled = previous_bus_position['distance_to_end'] - bus_position['distance_to_end']
         time_elapsed = bus_position['recorded_at'] - previous_bus_position['recorded_at']
-        print("%(bus_name)s add_observed_position interpolated; next stop: %(stop_ref)s, so prev_stop: %(prev_stop)s" % 
-          {'bus_name': self.number, 'stop_ref': bus_position['next_stop'], 'prev_stop': previous_stop})
-        print("distance: prev: %(prev_loc)fm, this: %(this_loc)fm; prev_dist: %(prev_dist)f; curtime: %(currec)s, prev: %(prevrec)s" % 
+        # print("%(bus_name)s add_observed_position interpolated; next stop: %(stop_ref)s, so prev_stop: %(prev_stop)s" % 
+        #   {'bus_name': self.number, 'stop_ref': bus_position['next_stop'], 'prev_stop': previous_stop})
+        # print("distance: prev: %(prev_loc)fm, this: %(this_loc)fm; prev_dist: %(prev_dist)f; curtime: %(currec)s, prev: %(prevrec)s" % 
           {'prev_loc': previous_bus_position['distance_to_end'], 'this_loc': bus_position['distance_to_end'], 
           'prev_dist': previous_bus_position['distance_to_next_stop'], 'prevrec':previous_bus_position['recorded_at'], 'currec': bus_position['recorded_at']})
         time_to_missed_stop = time_elapsed.seconds * (previous_bus_position['distance_to_next_stop'] / distance_traveled) 
@@ -106,24 +106,24 @@ class Bus:
     #   interpolated_prev_stop_arrival_time = timedelta(seconds=time_to_missed_stop) + previous_bus_position['recorded_at']
     #   self.stop_time_pairs[previous_stop] = interpolated_prev_stop_arrival_time
 
-        print("time: elapsed: %(el)fs, to next stop: %(tonext)fs; interpolated: %(interp)s" % 
-          {'el': time_elapsed.seconds, 'tonext': time_to_missed_stop, 'interp': interpolated_prev_stop_arrival_time.strftime("%H:%M:%S")})
+        # print("time: elapsed: %(el)fs, to next stop: %(tonext)fs; interpolated: %(interp)s" % 
+          # {'el': time_elapsed.seconds, 'tonext': time_to_missed_stop, 'interp': interpolated_prev_stop_arrival_time.strftime("%H:%M:%S")})
     
     #if we're at a stop, add it to the stop_time_pairs 
     # (being at_stop and needing to interpolate the previous stop are not mutually exclusive.)
     if self.stops.index(bus_position['next_stop']) > 0 and bus_position['is_at_stop']:
       self.stop_time_pairs[bus_position['next_stop']] = bus_position['recorded_at']
-      print("%(bus_name)s add_observed_position at stop" % {'bus_name': self.number})
+      # print("%(bus_name)s add_observed_position at stop" % {'bus_name': self.number})
 
     # Buses often lay over at the first stop, so we record the *last* time it as at the stop.
     first_stop = self.stops[0]
     if self.stops.index(bus_position['next_stop']) == 1 and self.stop_time_pairs[first_stop] is None:
       self.stop_time_pairs[first_stop] = previous_bus_position['recorded_at']
-      print("%(bus_name)s add_observed_position at stop 1" % {'bus_name': self.number})
+      # print("%(bus_name)s add_observed_position at stop 1" % {'bus_name': self.number})
 
     # print the progress so far.
-    print(self.number + ": ")
-    print([(stop_ref, self.stop_time_pairs[stop_ref].strftime("%H:%M:%S")) if self.stop_time_pairs[stop_ref] else (stop_ref,) for stop_ref in self.stops ])
+    # print(self.number + ": ")
+    # print([(stop_ref, self.stop_time_pairs[stop_ref].strftime("%H:%M:%S")) if self.stop_time_pairs[stop_ref] else (stop_ref,) for stop_ref in self.stops ])
 
   def fill_in_last_stop(self, recorded_at_str):
     """Fill in the last element in the stop_time_pairs.
@@ -157,7 +157,7 @@ class Bus:
   def set_trajectory_points(self, journey):
     distance_along_route = journey["OnwardCalls"]["OnwardCall"][0]["Extensions"]["Distances"]["CallDistanceAlongRoute"]
     if distance_along_route < max_gps_error:
-      print("%(bus_name)s at start: (%(dist)f m away)" % {'bus_name': self.number, 'dist': distance_along_route} )
+      # print("%(bus_name)s at start: (%(dist)f m away)" % {'bus_name': self.number, 'dist': distance_along_route} )
       self.has_full_data = True
     else:
       self.has_full_data = False
@@ -175,17 +175,17 @@ class Bus:
 
   # called when we're done with the bus (i.e. it's passed the stop we're interested in)
   def convert_to_trajectory(self, route_name, stop_id):
-    print("%(bus_name)s converting to trajectory" % {'bus_name': self.number})
+    # print("%(bus_name)s converting to trajectory" % {'bus_name': self.number})
 
     segment_intervals = self.segment_intervals()
     if None in segment_intervals: # not ready to be converted to trajectory; because a stop doesn't have time data.
-      print("%(bus_name)s trajectory conversion failed: %(segs)s " %{'bus_name': self.number, 'segs': segment_intervals})
+      # print("%(bus_name)s trajectory conversion failed: %(segs)s " %{'bus_name': self.number, 'segs': segment_intervals})
       return None
     if not self.has_full_data:
-      print("%(bus_name)s couldn't be converted to a trajectory" % {'bus_name': self.number})
+      # print("%(bus_name)s couldn't be converted to a trajectory" % {'bus_name': self.number})
       return None
-    print("%(bus_name)s converted to trajectory with segment_intervals: " % {'bus_name': self.number})
-    print(segment_intervals)
+    # print("%(bus_name)s converted to trajectory with segment_intervals: " % {'bus_name': self.number})
+    # print(segment_intervals)
 
     traj = Trajectory(route_name, stop_id, self.start_time)
     traj.set_segment_intervals(segment_intervals)
@@ -258,7 +258,7 @@ class Bus:
     if segment_intervals is None or all([seg is None for seg in  segment_intervals]):
       return []
     #truncate to last defined point of this bus (i.e. where it is now) to find similar trajectories _so far_.
-    print('%(bus_name)s segment_intervals: ' % {'bus_name': self.number} + ', '.join(map(str, segment_intervals)))
+    # print('%(bus_name)s segment_intervals: ' % {'bus_name': self.number} + ', '.join(map(str, segment_intervals)))
     last_defined_segment_index = segment_intervals.index(None) if None in segment_intervals else len(segment_intervals)
     truncated_trajectories = array([traj[:last_defined_segment_index] for traj in trajs]) #TODO: check for off-by-one here
     centroids,_ = kmeans(truncated_trajectories, number_of_clusters) 
