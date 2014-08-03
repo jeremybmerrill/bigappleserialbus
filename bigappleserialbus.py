@@ -113,8 +113,7 @@ class BigAppleSerialBus:
     self.session = DBSession()
 
   def __cycle_lights__(self):
-    print(self.lights)
-    light_pairs = [item.values() for sublist in self.lights.values() for item in sublist]
+    light_pairs = [item for sublist in [d.values() for d in self.lights.values()] for item in sublist]
     flat_lights = [item for sublist in light_pairs for item in sublist]
     for light in flat_lights:
       GPIO.output(light.pin, True)
