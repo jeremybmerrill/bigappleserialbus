@@ -19,6 +19,6 @@ class Light:
     self.do()
 
   def do(self):
-    GPIO.output(light.pin, light.status)
-    if light.status:
-      logging.debug("illuminating pin #%(pinNum)d" % {'pinNum': light.pin})
+    GPIO.output(self.pin, self.status)
+    if self.status:
+      logging.debug("illuminating pin #%(pinNum)d" % {'pinNum': self.pin})
