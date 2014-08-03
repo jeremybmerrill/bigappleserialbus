@@ -243,7 +243,7 @@ class BusStop(Base):
     return line
 
   def __repr__(self):
-    return "<BusStop %(route)s #%(number)s %(status) >" % {"route" : self.route_name, "number" : self.stop_id, 'status': self.status() }
+    return "<BusStop %(route)s #%(number)s %(status)s >" % {"route" : self.route_name, "number" : self.stop_id, 'status': self.status() }
 
   # potentially dead code.
   def set_previous_calls(self, journey):
