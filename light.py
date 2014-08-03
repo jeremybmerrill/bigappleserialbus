@@ -1,4 +1,5 @@
 import RPi.GPIO as GPIO
+import logging #magically the same as the one in bigappleserialbus.py
 
 class Light:
   def __init__(self, pin):
