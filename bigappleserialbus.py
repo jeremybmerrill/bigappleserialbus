@@ -78,7 +78,7 @@ class BigAppleSerialBus:
 
   def broadcast_status(self):
     if self.is_on_pi:
-      update_lights()
+      self.update_lights()
     print(' '.join([stop.status() for stop in self.bus_stops]))
 
   def convert_to_lights(self, bus_stop):
