@@ -128,13 +128,13 @@ class BigAppleSerialBus:
     #TODO: only print new status on non-15-sec ticks if it hasn't changed
     ticker.register(self.broadcast_status, self.between_status_updates)
     ticker.global_error(self.__global_error__)
-    try:
-      ticker.start()
-    except:
-      logging.exception("Ticker Error")
+    ticker.start()
 
   def __global_error__(self, error):
-    self.session.commit()
+    try:
+      self.session.commit()
+    except Exception as e:
+      logging.debug("unable to save on global error")
     logging.exception('Error:')
     if self.is_on_pi:
       light_pairs = self.lights.values()
