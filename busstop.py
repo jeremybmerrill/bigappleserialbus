@@ -14,6 +14,9 @@ from sqlalchemy import orm
 # from sqlalchemy import create_engine
 from terminal_colors import green_code, red_code, yellow_code, blue_code, end_color
 
+import logging #magically the same as the one in bigappleserialbus.py
+
+
 time_to_get_ready = 240 # seconds
 time_to_go = 180 #seconds
 seconds_to_sidewalk = 60 #seconds
@@ -68,6 +71,7 @@ class BusStop(Base):
     vehicle_activities, check_timestamp, success = self.get_locations()
     if not success:
       self.status_error
+      logging.debug("get locatoins failed")
       return []
     self.bus_is_imminent = False
     self.bus_is_near = False
@@ -182,6 +186,7 @@ class BusStop(Base):
           bus.first_projected_arrival = time.time() + similar_seconds_away
           bus.first_projected_arrival_speeds = time.time() + speeds_seconds_away
 
+    logging.debug(self)
     self.prep_for_writing()
     return trajectories
 

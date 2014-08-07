@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+
+import logging
+LOG_FILENAME = '/tmp/buses.log'
+logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
+
+
 from operator import itemgetter
 import time
 from busstop import BusStop
@@ -10,9 +16,6 @@ import traceback
 
 from terminal_colors import green_code, red_code, yellow_code, blue_code, end_color
 
-import logging
-LOG_FILENAME = '/tmp/buses.log'
-logging.basicConfig(filename=LOG_FILENAME)
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
