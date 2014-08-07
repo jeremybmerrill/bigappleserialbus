@@ -107,7 +107,8 @@ class BigAppleSerialBus:
 
   def __init_db__(self):
     """do database crap"""
-    engine = create_engine('sqlite:///buses.db') #only creates the file if it doesn't exist already
+    sqlite_db_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "buses.db")
+    engine = create_engine('sqlite:///' + sqlite_db_path) #only creates the file if it doesn't exist already
     Base.metadata.create_all(engine)
     Base.metadata.bind = engine
      
