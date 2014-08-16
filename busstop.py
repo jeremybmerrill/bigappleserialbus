@@ -88,11 +88,11 @@ class BusStop(Base):
       active_bus = new_buses[vehicle_ref]
 
       active_bus.add_observed_position(journey, activity["RecordedAtTime"])
-    print(self.route_name + " buses: " + ("["+', '.join(map(lambda b: b.number, new_buses.values())) + "]" if new_buses.values() else "[]"))
+    logging.debug(self.route_name + " buses: " + ("["+', '.join(map(lambda b: b.number, new_buses.values())) + "]" if new_buses.values() else "[]"))
 
     #for buses that just passed us (and that ever got close enough to have a projected arrival time):
     for bus_key, bus_past_stop in self.buses_on_route.items():
-      if bus_key not in new_buses.keys() and bus_past_stop.first_projected_arrival != 0.0:
+      if bus_key not in new_buses.keys():
 
         # when we never get a bus's data right when it arrives at the final stop, 
         # instead, it just disappears. We need to interpolate that last position
@@ -102,32 +102,27 @@ class BusStop(Base):
         else:
           most_recent_time = check_timestamp
         bus_past_stop.fill_in_last_stop(most_recent_time)
-        similar_error = bus_past_stop.first_projected_arrival - time.time()
-        speeds_error  = bus_past_stop.first_projected_arrival_speeds - time.time()
-        #TODO: lol, when my comptuer goes to sleep, it picks up when it's done, so we get unrealistic errors
+        if bus_past_stop.first_projected_arrival != 0.0:
+          similar_error = bus_past_stop.first_projected_arrival - time.time()
+          speeds_error  = bus_past_stop.first_projected_arrival_speeds - time.time()
 
-        # if self.route_name not in errors:
-        #   errors[self.route_name] = {}
-        # errors[self.route_name][vehicle_ref] = error
-        # print(errors[self.route_name].values())
-        self.errors.append(speeds_error)
-        avg_error = sum(self.errors) / len(self.errors)
-        median_error = sorted(self.errors)[len(self.errors) / 2]
+          self.errors.append(speeds_error)
+          avg_error = sum(self.errors) / len(self.errors)
+          median_error = sorted(self.errors)[len(self.errors) / 2]
 
+          error_early_late_speed = "early" if speeds_error > 0 else "late"
+          error_early_late_sim = "early" if similar_error > 0 else "late"
 
-        error_early_late_speed = "early" if speeds_error > 0 else "late"
-        error_early_late_sim = "early" if similar_error > 0 else "late"
+          avg_early_late = "early" if avg_error > 0 else "late"
+          median_early_late = "early" if median_error > 0 else "late"
 
-        avg_early_late = "early" if avg_error > 0 else "late"
-        median_early_late = "early" if median_error > 0 else "late"
-
-        print(remove_notice + "original projection for %(veh)s was incorrect, bus was %(sec)f seconds %(early_late)s by speed; %(secsim)f %(earlylatesim)s by similarity" % 
-            {'sec': int(abs(speeds_error)), 'early_late': error_early_late_speed, 'veh': bus_past_stop.number,
-             'secsim': int(abs(similar_error)), 'earlylatesim': error_early_late_sim })
-        print("bus %(name)s is, on average, %(avg_error)f seconds %(avg_early_late)s; median %(med)f %(median_early_late)s" % 
-          {'avg_error': int(abs(avg_error)), 'name': self.route_name, 'med': int(abs(median_error)), 
-          'avg_early_late': avg_early_late, 'median_early_late': median_early_late})
-        # print self.errors
+          logging.debug(remove_notice + "original projection for %(veh)s was incorrect, bus was %(sec)f seconds %(early_late)s by speed; %(secsim)f %(earlylatesim)s by similarity" % 
+              {'sec': int(abs(speeds_error)), 'early_late': error_early_late_speed, 'veh': bus_past_stop.number,
+               'secsim': int(abs(similar_error)), 'earlylatesim': error_early_late_sim })
+          logging.debug("bus %(name)s is, on average, %(avg_error)f seconds %(avg_early_late)s; median %(med)f %(median_early_late)s" % 
+            {'avg_error': int(abs(avg_error)), 'name': self.route_name, 'med': int(abs(median_error)), 
+            'avg_early_late': avg_early_late, 'median_early_late': median_early_late})
+          # logging.debug( self.errors)
         trajectories.append(bus_past_stop.convert_to_trajectory(self.route_name, self.stop_id)) #calculate the right columns.
     self.buses_on_route = new_buses
 
@@ -144,15 +139,16 @@ class BusStop(Base):
       mph = bus.get_speed_mph()
 
       if similar_seconds_away <= -1:
+        # it might be the case that this is the first trajectory we've seen for this bus! save it.
         continue
       else:
-        print("bus %(name)s/%(veh)s: %(secsim)i secs away from %(cnt)i similar trajectories" % 
+        logging.debug("bus %(name)s/%(veh)s: %(secsim)i secs away from %(cnt)i similar trajectories" % 
           {'name': self.route_name, 'sec': speeds_seconds_away, 'secsim': similar_seconds_away,
            'cnt':len(similar_trajectories['similar']), 'veh': vehicle_ref })
 
       if similar_seconds_away < self.too_late_to_catch_the_bus:
         # too close, won't make it.
-        print(fail_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
+        logging.debug(fail_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
             'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
           })
@@ -161,7 +157,7 @@ class BusStop(Base):
       if similar_seconds_away < self.time_to_go:
         self.bus_is_imminent = True
         bus.imminent()
-        print(red_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
+        logging.debug(red_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
             'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
           })
@@ -172,7 +168,7 @@ class BusStop(Base):
         # if a bus is within Time_to_go, it's necessarily within Time_to_get_ready, but I don't 
         # want it to trip the green pin too
       if similar_seconds_away < self.time_to_get_ready:
-        print(green_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
+        logging.debug(green_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
             'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
           })
@@ -203,6 +199,7 @@ class BusStop(Base):
 
     requestUrl = "http://bustime.mta.info/api/siri/stop-monitoring.json?key=%(key)s&OperatorRef=MTA&MonitoringRef=%(stop)s&StopMonitoringDetailLevel=%(onw)s" %\
             {'key': self.mta_key, 'stop': self.stop_id, 'onw': 'calls'}
+    logging.debug("locations: " + requestUrl)
     resp = None
     for i in xrange(0,4):
       try:
@@ -220,14 +217,14 @@ class BusStop(Base):
           raise e
         finally:
           if i > 0:
-            print("getting data failed before, but worked this time")
+            logging.debug("getting data failed before, but worked this time")
           break
       except (urllib2.URLError, SocketError, BadStatusLine) as e: 
-        print("getting data failed, trying again (%(i)i/4)" % {'i': i+1})
+        logging.debug("getting data failed, trying again (%(i)i/4)" % {'i': i+1})
         response = None
         resp = None
         if i == 3:
-          print("getting data failed 4 times")
+          logging.debug("getting data failed 4 times")
           return (None, None, False)
         time.sleep(10 * i)
     else:

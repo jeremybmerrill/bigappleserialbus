@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 
+from onpi import is_on_pi
 import logging
 LOG_FILENAME = '/tmp/buses.log'
-logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
-
+if  is_on_pi():
+  logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
+else:
+  logging.basicConfig(level=logging.DEBUG) #stdout
 
 from operator import itemgetter
 import time
 from busstop import BusStop
-from onpi import is_on_pi
 import yaml
 import os
 from ticker import Ticker
@@ -70,8 +72,8 @@ class BigAppleSerialBus:
 
   def check_buses(self):
     for stop in self.bus_stops:
-      logging.debug("checking %(route_name)s (%(count)i buses on route)" % 
-        {'route_name': stop.route_name, 'count': len(stop.buses_on_route) })
+      logging.debug("checking %(route_name)s/%(end_stop_id)s (%(count)i buses on route)" % 
+        {'route_name': stop.route_name, 'count': len(stop.buses_on_route), 'end_stop_id': stop.stop_id })
       trajectories = stop.check()
       for traj in [traj for traj in trajectories if traj]:
         self.session.add(traj)
@@ -155,3 +157,5 @@ class BigAppleSerialBus:
 
 if __name__ == "__main__":
   BigAppleSerialBus()
+
+#TODO: calculate errors.
