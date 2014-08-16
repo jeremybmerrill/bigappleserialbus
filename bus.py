@@ -34,10 +34,25 @@ class Bus:
     self.end_stop_id = end_stop_id
     self.red_light_time = None
     self.green_light_time = None
+    self.seconds_away = None
 
     self.first_projected_arrival = 0
     self.first_projected_arrival_speeds = 0
     self.set_trajectory_points(journey)
+
+  def __repr__(self):
+    seconds_away_str = ''
+    if self.seconds_away :
+      seconds_away_str = " %(sec)i s/a" %  { 'sec': self.seconds_away }
+    if self.first_projected_arrival and self.seconds_away:
+      seconds_away_str += ", FP: %(fp)s" % {'fp': str(datetime.fromtimestamp(self.first_projected_arrival))[11:19]}
+
+    return "<Bus #%(number)s %(route)s/%(stop)s%(sec)s>" % {
+          'number': self.number,
+          'route': self.route_name,
+          'stop': self.end_stop_id,
+          'sec': seconds_away_str
+        }
 
   def add_observed_position(self, journey, recorded_at_str):
     """tk"""
@@ -236,6 +251,7 @@ class Bus:
     # average time-to-home-stop of the similar trajectories
     remaining_times_on_similar_trajectories = [sum(traj[last_defined_segment_index:]) for traj in similar_trajectories]
     seconds_away = sum(remaining_times_on_similar_trajectories) / len(similar_trajectories)
+    self.seconds_away = seconds_away
     return {'similar': similar_trajectories, 'seconds_away': seconds_away}
 
   def filter_by_time(self, trajs):

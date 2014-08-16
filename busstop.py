@@ -88,7 +88,7 @@ class BusStop(Base):
       active_bus = new_buses[vehicle_ref]
 
       active_bus.add_observed_position(journey, activity["RecordedAtTime"])
-    logging.debug(self.route_name + " buses: " + ("["+', '.join(map(lambda b: b.number, new_buses.values())) + "]" if new_buses.values() else "[]"))
+    logging.debug(self.route_name + " buses: " + ("["+', '.join(map(lambda x: repr(x), new_buses.values())) + "]" if new_buses.values() else "[]"))
 
     #for buses that just passed us (and that ever got close enough to have a projected arrival time):
     for bus_key, bus_past_stop in self.buses_on_route.items():
@@ -106,7 +106,7 @@ class BusStop(Base):
           similar_error = bus_past_stop.first_projected_arrival - time.time()
           speeds_error  = bus_past_stop.first_projected_arrival_speeds - time.time()
 
-          self.errors.append(speeds_error)
+          self.errors.append(similar_error)
           avg_error = sum(self.errors) / len(self.errors)
           median_error = sorted(self.errors)[len(self.errors) / 2]
 
@@ -199,7 +199,7 @@ class BusStop(Base):
 
     requestUrl = "http://bustime.mta.info/api/siri/stop-monitoring.json?key=%(key)s&OperatorRef=MTA&MonitoringRef=%(stop)s&StopMonitoringDetailLevel=%(onw)s" %\
             {'key': self.mta_key, 'stop': self.stop_id, 'onw': 'calls'}
-    logging.debug("locations: " + requestUrl)
+    # logging.debug("locations: " + requestUrl)
     resp = None
     for i in xrange(0,4):
       try:
