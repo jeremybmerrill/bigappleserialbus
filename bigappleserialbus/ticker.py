@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+
+__author__ = 'Jeremy B. Merrill'
+__email__ = 'jeremybmerrill@gmail.com'
+__license__ = 'Apache'
+__version__ = '0.1'
+
 import time
 
 class Ticker:
