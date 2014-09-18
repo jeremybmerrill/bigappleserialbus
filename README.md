@@ -1,9 +1,13 @@
 bigappleserialbus
 =================
 
-hardware bus notifier for NYC MTA
+bus notifier for NYC MTA
 
-lights up green when it's time to get ready to go, green when it's time to go.
+for raspberry pi, but you could probably make it go on as a taskbar widget... 
+
+lights up green when it's time to get ready to go, red when it's time to go.
+
+uses OMG BIG DATA to predict when the bus is gonna come
 
 install
 -------
@@ -51,16 +55,21 @@ g) Bus passes your stop.<br>
 
 Walking time is the sum of the time it takes to get out of your apartment to the street (constant per stop), and the amount of time it takes to get to any specific stop (which varies per stop, since some stops are farther from you than others).
 
-Ideas for later:
+Bus arrival times are predicted using k-means clustering -- that is, BIG DATA ANALYTICS AND MACHINE LEARNING -- to based on previous, similar bus trajectories collected while the script runs. Inspired by [this academic paper](http://www.iis.sinica.edu.tw/~cclljj/publication/2012/12_GIS-HTTP.pdf).
+
+will this work in my city?
+--------------------------
+I dunno, maybe!
+
+It'll probably work fine if your city uses the [SIRI](http://en.wikipedia.org/wiki/Service_Interface_for_Real_Time_Information) data standard. If you're not in New York and want to use bigappleserialbus, please send me a note, I'd be happy to work with you to extend the code to support your city.
+
+can I help?
+-----------
+Yes. I would love to hear from you. Send me a note, open an issue or send a pull request. :)
+
+ideas for later:
 -----------------
 1. Use the light sensor to dim/brighten the LEDs based on ambient light (so they're dim if the light is off).
 1. Use the variable resistor/potentiometer to calibrate walking speed (e.g. it's easier to leave the house in the summer, or when no friends are here)
 1. Blink the green LED to indicate time until next bus. (E.g. once per 20 seconds if bus is 20 minutes away, when bus is TimeToGo, turn on continuously)
 1. Blink for 20 secs when it's really time to run.
-1. Keep track of average time to "home" stop for each preceding stop. Constrain speed estimates to 80th or 90th percentile (to avoid erroneous lights when the bus is going really fast for a short stretch)
-1. For each stop S before "home", keep track of the distribution of times it took for a bus at S to arrive at the "home" stop. Also keep track of distribution of time to home from S over a bucketized amount of time for the bus to travel some other constant distance (maybe from when it departed terminal? to account for variances in speed over date/time/weather)
-1. HTTP: keep track of each trip and the arrival time at each stop prior to home.
-
-
-keep track of trajectories:
-a table per route, with a column per stop, with records containing 
