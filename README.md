@@ -1,7 +1,9 @@
 bigappleserialbus
 =================
 
-hardware bus notifier for NYC MTA
+bus notifier for NYC MTA
+
+for raspberry pi, but you could probably make it go on as a taskbar widget... 
 
 lights up green when it's time to get ready to go, red when it's time to go.
 
