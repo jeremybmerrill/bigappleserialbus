@@ -224,13 +224,22 @@ class BusStop(Base):
         response = None
         resp = None
         if i == 3:
-          logging.debug("getting data failed 4 times")
+          logging.debug("getting data failed 4 times (except->if branch)")
           return (None, None, False)
         time.sleep(10 * i)
     else:
+      logging.debug("getting data failed 4 times (else branch)")
       return (None, None, False)
-    vehicle_activities = resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"]
-    check_timestamp = resp["Siri"]["ServiceDelivery"]["ResponseTimestamp"]
+    try:
+      vehicle_activities = resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"]
+    except Exception as e:
+      logging.debug(resp)
+      raise e
+    try:
+      check_timestamp = resp["Siri"]["ServiceDelivery"]["ResponseTimestamp"]
+    except Exception as e:
+      logging.debug(resp)
+      raise e
     return (vehicle_activities, check_timestamp, True)
 
   def status(self):
