@@ -3,13 +3,13 @@ bigappleserialbus
 
 bus notifier for NYC MTA
 
-for raspberry pi, but you could probably make it go on as a taskbar widget... 
+for raspberry pi
 
 lights up green when it's time to get ready to go, red when it's time to go.
 
 uses OMG BIG DATA to predict when the bus is gonna come
 
-![Picture of Big Apple Serial Bus](https://raw.githubusercontent.com/jeremybmerrill/bigappleserialbus/master/img/front-small.jpg)
+![Picture of Big Apple Serial Bus](https://raw.githubusercontent.com/jeremybmerrill/bigappleserialbus/master/img/front-blurred-small.jpg)
 
 install
 -------
@@ -36,7 +36,7 @@ some wires
 
 setup/circuit design
 ---------------
-![Picture of Board](https://raw.githubusercontent.com/jeremybmerrill/bigappleserialbus/master/img/board-blurred-small.jpg)
+![Picture of Board](https://raw.githubusercontent.com/jeremybmerrill/bigappleserialbus/master/img/board-small.jpg)
 
 for each bus line, wire up: 
 a GPIO pin -> 300ishΩ LED -> 560Ω resistor -> gnd
@@ -79,6 +79,7 @@ ideas for later:
 1. Blink the green LED to indicate time until next bus. (E.g. once per 20 seconds if bus is 20 minutes away, when bus is TimeToGo, turn on continuously)
 1. Blink for 20 secs when it's really time to run.
 1. use a shift register to support > 4 bus routes or use fewer GPIO ports
+1. ubuntu unity taskbar widget?
 
 license
 -------
