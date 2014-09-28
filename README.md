@@ -9,7 +9,7 @@ lights up green when it's time to get ready to go, red when it's time to go.
 
 uses OMG BIG DATA to predict when the bus is gonna come
 
-![Picture of Big Apple Serial Bus](https://raw.githubusercontent.com/jeremybmerrill/bigappleserialbus/master/img/front.jpg)
+![Picture of Big Apple Serial Bus](https://raw.githubusercontent.com/jeremybmerrill/bigappleserialbus/master/img/front-small.jpg)
 
 install
 -------
@@ -36,7 +36,7 @@ some wires
 
 setup/circuit design
 ---------------
-![Picture of Board](https://raw.githubusercontent.com/jeremybmerrill/bigappleserialbus/master/img/board.jpg)
+![Picture of Board](https://raw.githubusercontent.com/jeremybmerrill/bigappleserialbus/master/img/board-blurred-small.jpg)
 
 for each bus line, wire up: 
 a GPIO pin -> 300ishΩ LED -> 560Ω resistor -> gnd
