@@ -9,6 +9,8 @@ lights up green when it's time to get ready to go, red when it's time to go.
 
 uses OMG BIG DATA to predict when the bus is gonna come
 
+![Picture of Big Apple Serial Bus](https://raw.githubusercontent.com/jeremybmerrill/bigappleserialbus/master/img/front.jpg)
+
 install
 -------
 
@@ -34,11 +36,11 @@ some wires
 
 setup/circuit design
 ---------------
-![Image of Yaktocat](https://octodex.github.com/images/yaktocat.png)
+![Picture of Board](https://raw.githubusercontent.com/jeremybmerrill/bigappleserialbus/master/img/board.jpg)
 
-it's just pin -> LED -> 560Ω resistor -> gnd, twice per bus line.
+for each bus line, wire up: 
+a GPIO pin -> 300ishΩ LED -> 560Ω resistor -> gnd
 
-If you have 'em, probably better to use a resistor with a lower resistance, like 300ish ohms, I think?
 
 when do lights go on?
 ----------------------
