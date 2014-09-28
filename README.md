@@ -22,20 +22,23 @@ install
 7. sudo python bigappleserialbus.py
 8. to run on startup, add this line to `/etc/rc.local`: <pre>(sleep 10; python /home/pi/bigappleserialbus/bigappleserialbus.py)&</pre>
 
-platform
+hardware
 --------
 512mb raspberry pi
 latest raspbian
 [AdaFruit Pi Cobbler](http://www.adafruit.com/products/914)
 [AdaFruit's USB WiFi dongle](https://www.adafruit.com/products/814)
-a breadboard, some LEDs and wires
+a breadboard
+some LEDs
+some wires
 
-circuit design
+setup/circuit design
 ---------------
-I'll make a picture later.
+![Image of Yaktocat](https://octodex.github.com/images/yaktocat.png)
+
 it's just pin -> LED -> 560Ω resistor -> gnd, twice per bus line.
 
-If you have 'em, probably better to use a resistor with a lower resistance, like 300ish, I think?
+If you have 'em, probably better to use a resistor with a lower resistance, like 300ish ohms, I think?
 
 when do lights go on?
 ----------------------
@@ -73,6 +76,7 @@ ideas for later:
 1. Use the variable resistor/potentiometer to calibrate walking speed (e.g. it's easier to leave the house in the summer, or when no friends are here)
 1. Blink the green LED to indicate time until next bus. (E.g. once per 20 seconds if bus is 20 minutes away, when bus is TimeToGo, turn on continuously)
 1. Blink for 20 secs when it's really time to run.
+1. use a shift register to support > 4 bus routes or use fewer GPIO ports
 
 license
 -------
