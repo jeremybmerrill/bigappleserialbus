@@ -32,7 +32,7 @@ green_notice = green_code + "[green]" + end_color + " "
 red_notice = red_code + "[red]" + end_color + " "
 fail_notice = yellow_code + "[FAIL]" + end_color + " "
 remove_notice = blue_code + "[removed]" + end_color + " "
-apikey_path = os.path.join(os.path.dirname(__file__), "apikey.txt")
+apikey_path = os.path.join(os.path.dirname(__file__), "..", "apikey.txt")
 mta_api_key = open(apikey_path, 'r').read().strip()
 
 errors = {}

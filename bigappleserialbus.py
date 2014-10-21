@@ -5,30 +5,30 @@ __email__ = 'jeremybmerrill@gmail.com'
 __license__ = 'Apache'
 __version__ = '0.1'
 
-from onpi import is_on_pi
+from bigappleserialbus.onpi import is_on_pi
 import logging
 LOG_FILENAME = '/tmp/buses.log'
-if  is_on_pi():
+if is_on_pi():
   logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 else:
   logging.basicConfig(level=logging.DEBUG) #stdout
 
 from operator import itemgetter
 import time
-from busstop import BusStop
+from bigappleserialbus.busstop import BusStop
 import yaml
 import os
-from ticker import Ticker
+from bigappleserialbus.ticker import Ticker
 import traceback
 
-from terminal_colors import green_code, red_code, yellow_code, blue_code, end_color
+from bigappleserialbus.terminal_colors import green_code, red_code, yellow_code, blue_code, end_color
 
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from busstop import Base
+from bigappleserialbus.busstop import Base
 
 
 
