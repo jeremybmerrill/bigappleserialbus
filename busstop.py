@@ -149,7 +149,7 @@ class BusStop(Base):
         # it might be the case that this is the first trajectory we've seen for this bus! save it.
         continue
       else:
-        logging.debug("bus %(name)s/%(veh)s: %(secsim)i away from %(cnt)i similar trajectories" % 
+        logging.debug("bus %(name)s/%(veh)s: %(secsim)s away from %(cnt)i similar trajectories" % 
           {'name': self.route_name, 'secsim': str(seconds_to_minutes(similar_seconds_away))[2:8],
            'cnt':len(similar_trajectories['similar']), 'veh': vehicle_ref })
 
