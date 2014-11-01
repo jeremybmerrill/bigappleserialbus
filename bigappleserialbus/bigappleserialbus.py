@@ -9,7 +9,10 @@ from onpi import is_on_pi
 import logging
 LOG_FILENAME = '/tmp/buses.log'
 if is_on_pi():
-  logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
+  try:
+    logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
+  except IOError:
+    logging.basicConfig(level=logging.DEBUG) #stdout
 else:
   logging.basicConfig(level=logging.DEBUG) #stdout
 
