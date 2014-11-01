@@ -246,9 +246,23 @@ class Bus:
     if not similar_trajectories_by_time:
       return {'similar': [], 'seconds_away': -1}
 
-    similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, 10)
-    if len(similar_trajectories) < minimum_similar_trajectories:
-      similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, 5)
+
+    # backoff: if there's tons of trajectories, make a maximum of N clusters (max_clusters)
+    # if N clusters would make for clusters containing M trajectories and M < minimum_similar_trajectories
+    #   then try again with N_2 as N_1 / 2
+    # 
+    # How did I compute max_clusters? 
+    # count of time_periods * count of weather variables * weekday_types
+    # time_periods = early-morning-rush, late-morning-rush, late-morning, early-afternoon, mid-afternoon, early-evening-rush, late-evening-rush, late-evening, overnight
+    # weather_variables: hot, cold, rainy, snowy
+    # weekday_types: weekday, weekend
+    max_clusters = 72 
+
+    similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, max_clusters)
+    clusters_cnt = max_clusters
+    while len(similar_trajectories) < minimum_similar_trajectories:
+      clusters_cnt = clusters_cnt / 2
+      similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, clusters_cnt)
 
     if not similar_trajectories:
       return {'similar': [], 'seconds_away': -1}
