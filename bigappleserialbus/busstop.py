@@ -113,7 +113,7 @@ class BusStop(Base):
           similar_error = bus_past_stop.first_projected_arrival - time.time()
           speeds_error  = bus_past_stop.first_projected_arrival_speeds - time.time()
 
-          self.errors.append(similar_error)
+          self.errors.append(gsimilar_error)
           avg_error = sum(self.errors) / len(self.errors)
           median_error = sorted(self.errors)[len(self.errors) / 2]
 
@@ -149,8 +149,8 @@ class BusStop(Base):
         # it might be the case that this is the first trajectory we've seen for this bus! save it.
         continue
       else:
-        logging.debug("bus %(name)s/%(veh)s: %(secsim)i secs away from %(cnt)i similar trajectories" % 
-          {'name': self.route_name, 'sec': speeds_seconds_away, 'secsim': similar_seconds_away,
+        logging.debug("bus %(name)s/%(veh)s: %(secsim)i away from %(cnt)i similar trajectories" % 
+          {'name': self.route_name, 'sec': speeds_seconds_away, 'secsim': seconds_to_minutes(similar_seconds_away),
            'cnt':len(similar_trajectories['similar']), 'veh': vehicle_ref })
 
       if similar_seconds_away < self.too_late_to_catch_the_bus:
