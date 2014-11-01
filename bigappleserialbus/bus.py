@@ -21,6 +21,8 @@ from numpy.random import rand
 from scipy.cluster.vq import kmeans,vq
 import kmodes
 
+import logging #magically the same as the one in bigappleserialbus.py
+
 default_bus_speed = 4 # m/s ~= 8 miles per hour
 #sometimes the bus, at the terminal where it starts, reports itself as, e.g. 0.2 meters along the route.
 #this is used to decide that, yes, it's still at the start of the route.
@@ -262,7 +264,7 @@ class Bus:
     similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, max_clusters)
     clusters_cnt = max_clusters
     while clusters_cnt > 1 and len(similar_trajectories) < minimum_similar_trajectories:
-      print("backing off, with cluster count", clusters_cnt, "too few similar trajectories", len(similar_trajectories), " from",len(similar_trajectories_by_time), "total")
+      logging.debug("backing off, with cluster count", clusters_cnt, "too few similar trajectories", len(similar_trajectories), " from",len(similar_trajectories_by_time), "total")
       clusters_cnt = clusters_cnt / 2
       similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, clusters_cnt)
 
