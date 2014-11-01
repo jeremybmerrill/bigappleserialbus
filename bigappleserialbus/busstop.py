@@ -149,15 +149,15 @@ class BusStop(Base):
         # it might be the case that this is the first trajectory we've seen for this bus! save it.
         continue
       else:
-        logging.debug("bus %(name)s/%(veh)s: %(secsim)i away from %(cnt)i similar trajectories" % 
-          {'name': self.route_name, 'secsim': seconds_to_minutes(similar_seconds_away),
+        logging.debug("bus %(name)s/%(veh)s: %(secsim)s away from %(cnt)i similar trajectories" % 
+          {'name': self.route_name, 'secsim': str(seconds_to_minutes(similar_seconds_away))[2:8],
            'cnt':len(similar_trajectories['similar']), 'veh': vehicle_ref })
 
       if similar_seconds_away < self.too_late_to_catch_the_bus:
         # too close, won't make it.
         logging.debug(fail_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-            'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
+            'now': str(datetime.now().time())[2:8], 'veh': vehicle_ref
           })
         bus.too_late()
         continue
@@ -166,7 +166,7 @@ class BusStop(Base):
         bus.imminent()
         logging.debug(red_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-            'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
+            'now': str(datetime.now().time())[2:8], 'veh': vehicle_ref
           })
         if bus.first_projected_arrival == 0.0:
           bus.first_projected_arrival = time.time() + similar_seconds_away
@@ -177,7 +177,7 @@ class BusStop(Base):
       if similar_seconds_away < self.time_to_get_ready:
         logging.debug(green_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-            'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
+            'now': str(datetime.now().time())[2:8], 'veh': vehicle_ref
           })
         self.bus_is_near = True
         bus.near()
