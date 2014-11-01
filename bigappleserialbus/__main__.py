@@ -5,7 +5,7 @@ __email__ = 'jeremybmerrill@gmail.com'
 __license__ = 'Apache'
 __version__ = '0.1'
 
-from bigappleserialbus.onpi import is_on_pi
+from onpi import is_on_pi
 import logging
 LOG_FILENAME = '/tmp/buses.log'
 if is_on_pi():
@@ -15,20 +15,20 @@ else:
 
 from operator import itemgetter
 import time
-from bigappleserialbus.busstop import BusStop
+from busstop import BusStop
 import yaml
 import os
-from bigappleserialbus.ticker import Ticker
+from ticker import Ticker
 import traceback
 
-from bigappleserialbus.terminal_colors import green_code, red_code, yellow_code, blue_code, end_color
+from terminal_colors import green_code, red_code, yellow_code, blue_code, end_color
 
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from bigappleserialbus.busstop import Base
+from busstop import Base
 
 
 
@@ -55,7 +55,7 @@ class BigAppleSerialBus:
     self.__init_ticker__()
 
   def __init_stops__(self):
-    config_file_path = os.path.join(os.path.dirname(__file__), "config.yaml")
+    config_file_path = os.path.join(os.path.dirname(__file__), "../config.yaml")
     config = yaml.load(open(config_file_path, 'r'))
     for info in sorted(config["stops"], cmp=lambda x, y: (-1 * cmp(x["stop"], y["stop"])) if x["route_name"] == y["route_name"] else cmp(x["route_name"], y["route_name"]) ):
       busName = info["route_name"]
