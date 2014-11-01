@@ -22,7 +22,7 @@ install
 5. create a file called config.yaml, modeled after config-example.yaml. 
 6. get the GTFS stop identifier for your line from the [VehicleMonitoring](http://bustime.mta.info/wiki/Developers/SIRIVehicleMonitoring) API. (Literally watch the feed until a bus is at your stop, then record the stop identifier); paste that into the config file.
 7. sudo python bigappleserialbus.py
-8. to run on startup, add this line to `/etc/rc.local`: <pre>(sleep 10; python /home/pi/bigappleserialbus/bigappleserialbus.py)&</pre>
+8. to run on startup, add this line to `/etc/rc.local`: <pre>(sleep 10; python /home/pi/bigappleserialbus/bigappleserialbus)&</pre>
 
 hardware
 --------
