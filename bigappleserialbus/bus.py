@@ -308,7 +308,7 @@ class Bus:
     truncated_segment_intervals = segment_intervals[:last_defined_segment_index]
     my_cluster_index, _ = vq(array([truncated_segment_intervals]), centroids)
     my_cluster_index = my_cluster_index[0]
-    print("clusters: [%(sizes)s]" % 
+    logging.debug("clusters: [%(sizes)s]" % 
       {"sizes": ', '.join([str(cluster_indices.tolist().count(idx)) + ("*" if idx == my_cluster_index else "") for idx in set(sorted(cluster_indices))])})
     similar_trajectories = [traj for i, traj in enumerate(trajs) if cluster_indices[i] == my_cluster_index]
 
