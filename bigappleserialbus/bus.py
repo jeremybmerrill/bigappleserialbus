@@ -254,12 +254,12 @@ class Bus:
     #   then try again with N_2 as N_1 / 2
     # 
     # How did I compute max_clusters? 
-    # count of time_periods * count of weather variables * weekday_types
+    # count of time_periods * count of weather variables * weekday_types * 4
     # time_periods = early-morning-rush, late-morning-rush, late-morning, early-afternoon, mid-afternoon, early-evening-rush, late-evening-rush, late-evening, overnight
     # weather_variables: hot, cold, rainy, snowy
     # weekday_types: weekday, weekend
 
-    max_clusters = 72 
+    max_clusters = 288
 
     similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, max_clusters)
     clusters_cnt = max_clusters
