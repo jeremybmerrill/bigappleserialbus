@@ -263,8 +263,8 @@ class Bus:
 
     similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, max_clusters)
     clusters_cnt = max_clusters
-    while clusters_cnt > 1 and len(similar_trajectories) < minimum_similar_trajectories:
-      logging.debug("backing off, with cluster count", clusters_cnt, "too few similar trajectories", len(similar_trajectories), " from",len(similar_trajectories_by_time), "total")
+    while clusters_cnt > 1 and len(similar_trajectories) < minimum_similar_trajectories and len(similar_trajectories) > 0:
+      logging.debug(' '.join(map(str, ["backing off, with cluster count", clusters_cnt, "too few similar trajectories", len(similar_trajectories), "from",len(similar_trajectories_by_time), "total"])))
       clusters_cnt = clusters_cnt / 2
       similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, clusters_cnt)
 
@@ -310,8 +310,15 @@ class Bus:
     my_cluster_index = my_cluster_index[0]
     logging.debug("clusters: [%(sizes)s]" % 
       {"sizes": ', '.join([str(cluster_indices.tolist().count(idx)) + ("*" if idx == my_cluster_index else "") for idx in set(sorted(cluster_indices))])})
-    similar_trajectories = [traj for i, traj in enumerate(trajs) if cluster_indices[i] == my_cluster_index]
 
+    # #find the suspiciously-large cluster... that might be the problem
+    large_cluster_indices = [idx for idx in set(sorted(cluster_indices)) if cluster_indices.tolist().count(idx) > 1000] 
+    for i, traj in enumerate(trajs):
+      if cluster_indices[i] in large_cluster_indices:
+        if random.ranf() > 0.995:  #5 in 1000
+          logging.debug("large cluster member: " + str(traj.tolist()))
+    
+    similar_trajectories = [traj for i, traj in enumerate(trajs) if cluster_indices[i] == my_cluster_index]
     return similar_trajectories
 
   #called when a bus's lights are turned off, when there's not time to make it to the bus
