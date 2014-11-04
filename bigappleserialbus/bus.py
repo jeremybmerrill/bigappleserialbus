@@ -103,7 +103,6 @@ class Bus:
       self.start_time = bus_position['recorded_at']
 
     #if we've passed the next stop (i.e. the first key with None as its value), interpolate its value
-    #TODO: what if we've passed two stops?
 
     for previous_stop in self.stops[:self.stops.index(bus_position['next_stop'])]:
       if self.stop_time_pairs[previous_stop] is None:
@@ -117,21 +116,6 @@ class Bus:
         time_to_missed_stop = time_elapsed.seconds * (previous_bus_position['distance_to_next_stop'] / distance_traveled) 
         interpolated_prev_stop_arrival_time = timedelta(seconds=time_to_missed_stop) + previous_bus_position['recorded_at']
         self.stop_time_pairs[previous_stop] = interpolated_prev_stop_arrival_time
-
-    # if self.stops.index(bus_position['next_stop']) > 0 and self.stop_time_pairs[previous_stop] is None:
-    #   distance_traveled = previous_bus_position['distance_to_end'] - bus_position['distance_to_end']
-    #   time_elapsed = bus_position['recorded_at'] - previous_bus_position['recorded_at']
-    #   print("%(bus_name)s add_observed_position interpolated; next stop: %(stop_ref)s, so prev_stop: %(prev_stop)s" % 
-    #     {'bus_name': self.number, 'stop_ref': bus_position['next_stop'], 'prev_stop': previous_stop})
-    #   print("distance: prev: %(prev_loc)fm, this: %(this_loc)fm; prev_dist: %(prev_dist)f; curtime: %(currec)s, prev: %(prevrec)s" % 
-    #     {'prev_loc': previous_bus_position['distance_to_end'], 'this_loc': bus_position['distance_to_end'], 
-    #     'prev_dist': previous_bus_position['distance_to_next_stop'], 'prevrec':previous_bus_position['recorded_at'], 'currec': bus_position['recorded_at']})
-    #   time_to_missed_stop = time_elapsed.seconds * (previous_bus_position['distance_to_next_stop'] / distance_traveled) 
-    #   interpolated_prev_stop_arrival_time = timedelta(seconds=time_to_missed_stop) + previous_bus_position['recorded_at']
-    #   self.stop_time_pairs[previous_stop] = interpolated_prev_stop_arrival_time
-
-        # print("time: elapsed: %(el)fs, to next stop: %(tonext)fs; interpolated: %(interp)s" % 
-          # {'el': time_elapsed.seconds, 'tonext': time_to_missed_stop, 'interp': interpolated_prev_stop_arrival_time.strftime("%H:%M:%S")})
     
     #if we're at a stop, add it to the stop_time_pairs 
     # (being at_stop and needing to interpolate the previous stop are not mutually exclusive.)
