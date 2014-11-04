@@ -104,6 +104,8 @@ class Bus:
 
     #if we've passed the next stop (i.e. the first key with None as its value), interpolate its value
 
+    #TODO: test this real good.
+
     for previous_stop in self.stops[:self.stops.index(bus_position['next_stop'])]:
       if self.stop_time_pairs[previous_stop] is None:
         distance_traveled = previous_bus_position['distance_to_end'] - bus_position['distance_to_end']
@@ -113,7 +115,7 @@ class Bus:
         # print("distance: prev: %(prev_loc)fm, this: %(this_loc)fm; prev_dist: %(prev_dist)f; curtime: %(currec)s, prev: %(prevrec)s" % 
         #   {'prev_loc': previous_bus_position['distance_to_end'], 'this_loc': bus_position['distance_to_end'], 
         #   'prev_dist': previous_bus_position['distance_to_next_stop'], 'prevrec':previous_bus_position['recorded_at'], 'currec': bus_position['recorded_at']})
-        time_to_missed_stop = time_elapsed.seconds * (previous_bus_position['distance_to_next_stop'] / distance_traveled) 
+        time_to_missed_stop = time_elapsed.seconds * (float(previous_bus_position['distance_to_next_stop']) / distance_traveled) 
         interpolated_prev_stop_arrival_time = timedelta(seconds=time_to_missed_stop) + previous_bus_position['recorded_at']
         self.stop_time_pairs[previous_stop] = interpolated_prev_stop_arrival_time
     
