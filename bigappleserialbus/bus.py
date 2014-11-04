@@ -316,7 +316,7 @@ class Bus:
     for i, traj in enumerate(trajs):
       if cluster_indices[i] in large_cluster_indices:
         if rand() > 0.995:  #5 in 1000
-          logging.debug("large cluster member: " + str(traj.tolist()))
+          logging.debug("large cluster member: " + str(traj))
     
     similar_trajectories = [traj for i, traj in enumerate(trajs) if cluster_indices[i] == my_cluster_index]
     return similar_trajectories
