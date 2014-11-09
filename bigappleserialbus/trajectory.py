@@ -71,7 +71,7 @@ class Trajectory(Base):
       setattr(self, column, segment_interval)
 
   def __repr__(self):
-    return ', '.join([segment0, segment1, segment2, segment3, segment4, segment5, segment6, segment7, segment8, segment9, segment10, segment11, segment12, segment13, segment14, segment15, segment16, segment17, segment18, segment19, segment20, segment21, segment22, segment23, segment24, segment25, segment26, segment27, segment28, segment29, segment30, segment31, segment32, segment33, segment34, segment35, segment36, segment37, segment38, segment39])
+    return ', '.join(map(str, [self.segment0, self.segment1, self.segment2, self.segment3, self.segment4, self.segment5, self.segment6, self.segment7, self.segment8, self.segment9, self.segment10, self.segment11, self.segment12, self.segment13, self.segment14, self.segment15, self.segment16, self.segment17, self.segment18, self.segment19, self.segment20, self.segment21, self.segment22, self.segment23, self.segment24, self.segment25, self.segment26, self.segment27, self.segment28, self.segment29, self.segment30, self.segment31, self.segment32, self.segment33, self.segment34, self.segment35, self.segment36, self.segment37, self.segment38, self.segment39]))
   # @staticmethod
   # def to_time_vector(trajectory_time):
   #   return (trajectory_time.weekday(), (trajectory_time.hour * 2) + (trajectory_time.minute / 30) )

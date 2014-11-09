@@ -110,14 +110,15 @@ class Bus:
         distance_traveled = previous_bus_position['distance_to_end'] - bus_position['distance_to_end']
         time_elapsed = bus_position['recorded_at'] - previous_bus_position['recorded_at']
         assert time_elapsed.seconds > 0
-        print("%(bus_name)s add_observed_position interpolated; next stop: %(stop_ref)s, so prev_stop: %(prev_stop)s" % 
-          {'bus_name': self.number, 'stop_ref': bus_position['next_stop'], 'prev_stop': missed_stop})
+        print(self.stop_time_pairs[missed_stop])
+        print("%(bus_name)s add_observed_position interpolated; next stop: %(stop_ref)s, so prev_stop: %(missed)s @ %(missed_dist)s away" % 
+          {'bus_name': self.number, 'stop_ref': bus_position['next_stop'], 'missed': missed_stop, 'missed_dist': self.stop_distances[missed_stop]})
         # print("distance: prev: %(prev_loc)fm, this: %(this_loc)fm; prev_dist: %(prev_dist)f; curtime: %(currec)s, prev: %(prevrec)s" % 
         #   {'prev_loc': previous_bus_position['distance_to_end'], 'this_loc': bus_position['distance_to_end'], 
         #   'prev_dist': previous_bus_position['distance_to_next_stop'], 'prevrec':previous_bus_position['recorded_at'], 'currec': bus_position['recorded_at']})
         
         # old code that I think was really broken.
-        # time_to_missed_stop = time_elapsed.seconds * (float(previous_bus_position['distance_to_next_stop']) / distance_traveled) 
+        old_wrong_time_to_missed_stop = time_elapsed.seconds * (float(previous_bus_position['distance_to_next_stop']) / distance_traveled) 
         
         # explanation of what's going on here
         #
@@ -128,11 +129,12 @@ class Bus:
         # 100 sec here is time_elapsed.seconds
         # 600m is distance_traveled
         # 150m is (for first stop) self.stop_distances[missed_stop]
-        distance_to_missed_stop = previous_bus_position['distance_to_end'] - self.stop_distances[missed_stop]
+        distance_to_missed_stop = abs(previous_bus_position['distance_to_end'] - self.stop_distances[missed_stop])
+
         time_to_missed_stop = time_elapsed.seconds * (float(distance_to_missed_stop) / distance_traveled) 
-        print("prev/curr dist: %(prev_dist)f/%(curr_dist)f, time elapsed: %(time_elapsed)i, time to stop: %(time_to)i" %
+        print("prev/curr dist: %(prev_dist)f/%(curr_dist)f, time elapsed: %(time_elapsed)i, time to stop: %(time_to)i (old: %(old)i)" %
           {'prev_dist': previous_bus_position['distance_to_end'], 'curr_dist': bus_position['distance_to_end'], 
-           'time_elapsed': time_elapsed.seconds, 'time_to': time_to_missed_stop})
+           'time_elapsed': time_elapsed.seconds, 'time_to': time_to_missed_stop, 'old': old_wrong_time_to_missed_stop})
 
         interpolated_prev_stop_arrival_time = timedelta(seconds=time_to_missed_stop) + previous_bus_position['recorded_at']
         self.stop_time_pairs[missed_stop] = interpolated_prev_stop_arrival_time
@@ -163,7 +165,7 @@ class Bus:
 
        We don't have a "journey" in that case. 
     """
-
+    print("filling in last stop")
     bus_position = {
       'recorded_at': datetime.strptime(recorded_at_str[:19], "%Y-%m-%dT%H:%M:%S"), #recorded_at
       'next_stop': self.stops[-1],
@@ -192,11 +194,11 @@ class Bus:
 
     for index, onward_call in enumerate(journey["OnwardCalls"]["OnwardCall"]):
       stop_ref = onward_call["StopPointRef"]
-      distance_from_call = onward_call["Extensions"]["Distances"]["DistanceFromCall"]
+      distance_along_route = onward_call["Extensions"]["Distances"]["CallDistanceAlongRoute"]
       if stop_ref not in self.stops:
         # i = stop_ref #IntermediateStop(self.route_name, stop_ref, onward_call["StopPointName"])
         self.stops.append(stop_ref)
-        self.stop_distances[stop_ref] = distance_from_call
+        self.stop_distances[stop_ref] = distance_along_route
         self.stop_time_pairs[stop_ref] = None
       if index == 0:
         self.stop_time_pairs[stop_ref] = self.start_time
