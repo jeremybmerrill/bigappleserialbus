@@ -131,6 +131,8 @@ class Bus:
         # 600m is distance_traveled
         # 150m is (for first stop) self.stop_distances[missed_stop] - previous_bus_position['distance_along_route']
         distance_to_missed_stop = self.stop_distances[missed_stop] - previous_bus_position['distance_along_route']
+        if distance_to_missed_stop < 0:
+          print(self.bus_name, missed_stop, bus_position['next_stop'], self.stop_distances[missed_stop], previous_bus_position['distance_along_route'])
         assert(distance_to_missed_stop >= 0)
         time_to_missed_stop = time_elapsed.seconds * (float(distance_to_missed_stop) / distance_traveled) 
         assert(time_to_missed_stop >= 0)
@@ -202,7 +204,7 @@ class Bus:
       # print("%(bus_name)s at start: (%(dist)f m away)" % {'bus_name': self.number, 'dist': starting_distance_along_route} )
       self.has_full_data = True
     else:
-      print("%(bus_name)s added mid-route: (%(dist)f m away)" % {'bus_name': self.number, 'dist': starting_distance_along_route} )
+      print("%(bus_name)s added mid-route: (%(dist)f m along route)" % {'bus_name': self.number, 'dist': starting_distance_along_route} )
       self.has_full_data = False
 
     for index, onward_call in enumerate(journey["OnwardCalls"]["OnwardCall"]):
