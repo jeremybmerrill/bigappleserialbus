@@ -23,6 +23,7 @@ from terminal_colors import green_code, red_code, yellow_code, blue_code, end_co
 
 import logging #magically the same as the one in bigappleserialbus.py
 
+write_bustime_responses_for_debug = False
 
 time_to_get_ready = 240 # seconds
 time_to_go = 180 #seconds
@@ -247,6 +248,12 @@ class BusStop(Base):
     except Exception as e:
       logging.debug(resp)
       raise e
+
+    if write_bustime_responses_for_debug:
+      filename = self.route_name + "." + self.stop_id + "." + check_timestamp + ".json"
+      filepath = os.path.join(os.path.dirname(__file__), "..", "debugjson", filename)
+      with open(filepath, 'w') as f:
+        f.write(jsonresp)
     return (vehicle_activities, check_timestamp, True)
 
   def status(self):

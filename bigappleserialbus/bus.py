@@ -6,7 +6,7 @@ __license__ = 'Apache'
 __version__ = '0.1'
 
 from datetime import datetime, timedelta
-import time
+# import time
 from trajectory import Trajectory
 from itertools import tee, izip
 from collections import OrderedDict
@@ -37,6 +37,7 @@ class Bus:
     self.stop_time_pairs = OrderedDict() #store time along the route
     self.start_time = None
     self.stops = []
+    self.stop_distances = {}
     self.previous_bus_positions = []
     self.db_session = session
     self.route_name = route_name
@@ -88,7 +89,6 @@ class Bus:
       return
 
     previous_bus_position = self.previous_bus_positions[-1]
-    previous_stop = self.stops[self.stops.index(bus_position['next_stop'])-1]
     self.previous_bus_positions.append(bus_position)
 
     # if this bus_position hasn't been updated since the last check, skip it.
@@ -105,19 +105,37 @@ class Bus:
     #if we've passed the next stop (i.e. the first key with None as its value), interpolate its value
 
     #TODO: test this real good.
-
-    for previous_stop in self.stops[:self.stops.index(bus_position['next_stop'])]:
-      if self.stop_time_pairs[previous_stop] is None:
+    for missed_stop in self.stops[:self.stops.index(bus_position['next_stop'])]:
+      if self.stop_time_pairs[missed_stop] is None:
         distance_traveled = previous_bus_position['distance_to_end'] - bus_position['distance_to_end']
         time_elapsed = bus_position['recorded_at'] - previous_bus_position['recorded_at']
+        assert time_elapsed.seconds > 0
         print("%(bus_name)s add_observed_position interpolated; next stop: %(stop_ref)s, so prev_stop: %(prev_stop)s" % 
-          {'bus_name': self.number, 'stop_ref': bus_position['next_stop'], 'prev_stop': previous_stop})
-        print("distance: prev: %(prev_loc)fm, this: %(this_loc)fm; prev_dist: %(prev_dist)f; curtime: %(currec)s, prev: %(prevrec)s" % 
-          {'prev_loc': previous_bus_position['distance_to_end'], 'this_loc': bus_position['distance_to_end'], 
-          'prev_dist': previous_bus_position['distance_to_next_stop'], 'prevrec':previous_bus_position['recorded_at'], 'currec': bus_position['recorded_at']})
-        time_to_missed_stop = time_elapsed.seconds * (float(previous_bus_position['distance_to_next_stop']) / distance_traveled) 
+          {'bus_name': self.number, 'stop_ref': bus_position['next_stop'], 'prev_stop': missed_stop})
+        # print("distance: prev: %(prev_loc)fm, this: %(this_loc)fm; prev_dist: %(prev_dist)f; curtime: %(currec)s, prev: %(prevrec)s" % 
+        #   {'prev_loc': previous_bus_position['distance_to_end'], 'this_loc': bus_position['distance_to_end'], 
+        #   'prev_dist': previous_bus_position['distance_to_next_stop'], 'prevrec':previous_bus_position['recorded_at'], 'currec': bus_position['recorded_at']})
+        
+        # old code that I think was really broken.
+        # time_to_missed_stop = time_elapsed.seconds * (float(previous_bus_position['distance_to_next_stop']) / distance_traveled) 
+        
+        # explanation of what's going on here
+        #
+        # bust_pos-----S------S-----bus_pos
+        # 0sec                      100 sec
+        # 0m          150m   320m   600m
+        # assume a constant speed
+        # 100 sec here is time_elapsed.seconds
+        # 600m is distance_traveled
+        # 150m is (for first stop) self.stop_distances[missed_stop]
+        distance_to_missed_stop = previous_bus_position['distance_to_end'] - self.stop_distances[missed_stop]
+        time_to_missed_stop = time_elapsed.seconds * (float(distance_to_missed_stop) / distance_traveled) 
+        print("prev/curr dist: %(prev_dist)f/%(curr_dist)f, time elapsed: %(time_elapsed)i, time to stop: %(time_to)i" %
+          {'prev_dist': previous_bus_position['distance_to_end'], 'curr_dist': bus_position['distance_to_end'], 
+           'time_elapsed': time_elapsed.seconds, 'time_to': time_to_missed_stop})
+
         interpolated_prev_stop_arrival_time = timedelta(seconds=time_to_missed_stop) + previous_bus_position['recorded_at']
-        self.stop_time_pairs[previous_stop] = interpolated_prev_stop_arrival_time
+        self.stop_time_pairs[missed_stop] = interpolated_prev_stop_arrival_time
     
     #if we're at a stop, add it to the stop_time_pairs 
     # (being at_stop and needing to interpolate the previous stop are not mutually exclusive.)
@@ -165,21 +183,23 @@ class Bus:
   # this just fills in the keys to self.stop_time_pairs and members of self.stops
   # called only on init.
   def set_trajectory_points(self, journey):
-    distance_along_route = journey["OnwardCalls"]["OnwardCall"][0]["Extensions"]["Distances"]["CallDistanceAlongRoute"]
-    if distance_along_route < max_gps_error:
-      # print("%(bus_name)s at start: (%(dist)f m away)" % {'bus_name': self.number, 'dist': distance_along_route} )
+    starting_distance_along_route = journey["OnwardCalls"]["OnwardCall"][0]["Extensions"]["Distances"]["CallDistanceAlongRoute"]
+    if starting_distance_along_route < max_gps_error:
+      # print("%(bus_name)s at start: (%(dist)f m away)" % {'bus_name': self.number, 'dist': starting_distance_along_route} )
       self.has_full_data = True
     else:
       self.has_full_data = False
 
     for index, onward_call in enumerate(journey["OnwardCalls"]["OnwardCall"]):
       stop_ref = onward_call["StopPointRef"]
+      distance_from_call = onward_call["Extensions"]["Distances"]["DistanceFromCall"]
       if stop_ref not in self.stops:
-        i = stop_ref #IntermediateStop(self.route_name, stop_ref, onward_call["StopPointName"])
-        self.stops.append(i)
-        self.stop_time_pairs[i] = None
+        # i = stop_ref #IntermediateStop(self.route_name, stop_ref, onward_call["StopPointName"])
+        self.stops.append(stop_ref)
+        self.stop_distances[stop_ref] = distance_from_call
+        self.stop_time_pairs[stop_ref] = None
       if index == 0:
-        self.stop_time_pairs[i] = self.start_time
+        self.stop_time_pairs[stop_ref] = self.start_time
       if stop_ref == journey["MonitoredCall"]["StopPointRef"]:
         break
 
