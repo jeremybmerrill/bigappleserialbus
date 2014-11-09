@@ -26,14 +26,11 @@ import traceback
 
 from terminal_colors import green_code, red_code, yellow_code, blue_code, end_color
 
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 from busstop import Base
-
-
 
 class BigAppleSerialBus:
   is_on_pi = False

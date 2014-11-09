@@ -57,8 +57,9 @@ class Bus:
     if self.first_projected_arrival and self.seconds_away:
       seconds_away_str += ", FP: %(fp)s" % {'fp': str(datetime.fromtimestamp(self.first_projected_arrival))[11:19]}
 
-    return "<Bus #%(number)s %(route)s/%(stop)s%(sec)s>" % {
+    return "<Bus #%(number)s%(full_data)s %(route)s/%(stop)s%(sec)s>" % {
           'number': self.number,
+          'full_data': '' if self.has_full_data else '*',
           'route': self.route_name,
           'stop': self.end_stop_id,
           'sec': seconds_away_str
@@ -69,6 +70,7 @@ class Bus:
     bus_position = {
       'recorded_at': datetime.strptime(recorded_at_str[:19], "%Y-%m-%dT%H:%M:%S"), #recorded_at
       'next_stop': journey["OnwardCalls"]["OnwardCall"][0]["StopPointRef"], #next_stop_ref
+      'distance_along_route': journey["MonitoredCall"]["Extensions"]["Distances"]["CallDistanceAlongRoute"] - journey["MonitoredCall"]["Extensions"]["Distances"]["DistanceFromCall"],
       'distance_to_end': journey["MonitoredCall"]["Extensions"]["Distances"]["DistanceFromCall"], #distance_from_call
       'distance_to_next_stop': journey["OnwardCalls"]["OnwardCall"][0]["Extensions"]["Distances"]["DistanceFromCall"],
       'is_at_stop': journey["OnwardCalls"]["OnwardCall"][0]["Extensions"]["Distances"]["PresentableDistance"] == "at stop",
@@ -110,9 +112,8 @@ class Bus:
         distance_traveled = previous_bus_position['distance_to_end'] - bus_position['distance_to_end']
         time_elapsed = bus_position['recorded_at'] - previous_bus_position['recorded_at']
         assert time_elapsed.seconds > 0
-        print(self.stop_time_pairs[missed_stop])
         print("%(bus_name)s add_observed_position interpolated; next stop: %(stop_ref)s, so prev_stop: %(missed)s @ %(missed_dist)s away" % 
-          {'bus_name': self.number, 'stop_ref': bus_position['next_stop'], 'missed': missed_stop, 'missed_dist': self.stop_distances[missed_stop]})
+          {'bus_name': self.number, 'stop_ref': bus_position['next_stop'], 'missed': missed_stop, 'missed_dist': self.stop_distances[self.stops[-1]] - self.stop_distances[missed_stop]})
         # print("distance: prev: %(prev_loc)fm, this: %(this_loc)fm; prev_dist: %(prev_dist)f; curtime: %(currec)s, prev: %(prevrec)s" % 
         #   {'prev_loc': previous_bus_position['distance_to_end'], 'this_loc': bus_position['distance_to_end'], 
         #   'prev_dist': previous_bus_position['distance_to_next_stop'], 'prevrec':previous_bus_position['recorded_at'], 'currec': bus_position['recorded_at']})
@@ -128,10 +129,11 @@ class Bus:
         # assume a constant speed
         # 100 sec here is time_elapsed.seconds
         # 600m is distance_traveled
-        # 150m is (for first stop) self.stop_distances[missed_stop]
-        distance_to_missed_stop = abs(previous_bus_position['distance_to_end'] - self.stop_distances[missed_stop])
-
+        # 150m is (for first stop) self.stop_distances[missed_stop] - previous_bus_position['distance_along_route']
+        distance_to_missed_stop = self.stop_distances[missed_stop] - previous_bus_position['distance_along_route']
+        assert(distance_to_missed_stop >= 0)
         time_to_missed_stop = time_elapsed.seconds * (float(distance_to_missed_stop) / distance_traveled) 
+        assert(time_to_missed_stop >= 0)
         print("prev/curr dist: %(prev_dist)f/%(curr_dist)f, time elapsed: %(time_elapsed)i, time to stop: %(time_to)i (old: %(old)i)" %
           {'prev_dist': previous_bus_position['distance_to_end'], 'curr_dist': bus_position['distance_to_end'], 
            'time_elapsed': time_elapsed.seconds, 'time_to': time_to_missed_stop, 'old': old_wrong_time_to_missed_stop})
@@ -151,6 +153,8 @@ class Bus:
       self.stop_time_pairs[first_stop] = previous_bus_position['recorded_at']
       # print("%(bus_name)s add_observed_position at stop 1" % {'bus_name': self.number})
 
+    print(self.number + str(self.stop_time_pairs))
+    print(self.number + " stop_time_pairs at " + str(bus_position['next_stop']) + " set to " + str(self.stop_time_pairs[bus_position['next_stop']]))
     # print the progress so far.
     # print(self.number + ": ")
     # print([(stop_ref, self.stop_time_pairs[stop_ref].strftime("%H:%M:%S")) if self.stop_time_pairs[stop_ref] else (stop_ref,) for stop_ref in self.stops ])
@@ -165,11 +169,19 @@ class Bus:
 
        We don't have a "journey" in that case. 
     """
-    print("filling in last stop")
+    # if a bus stops appearing the API responses, but never got any values filled in
+    # (e.g. because it ran a route in the other direction than what we're following, then left service)
+    # don't try to "interpolate" its entire trajectory
+    if(False not in [i == None for i in self.stop_time_pairs.values()]):
+      print(self.number + " didn't fill in last stop")
+      return
+
+    print(self.number + " filling in last stop")
     bus_position = {
       'recorded_at': datetime.strptime(recorded_at_str[:19], "%Y-%m-%dT%H:%M:%S"), #recorded_at
       'next_stop': self.stops[-1],
       'distance_to_end': 0.0,
+      'distance_along_route': self.stop_distances[self.stops[-1]],
       'distance_to_next_stop': 0.0,
       'is_at_stop': True,
     }
@@ -190,6 +202,7 @@ class Bus:
       # print("%(bus_name)s at start: (%(dist)f m away)" % {'bus_name': self.number, 'dist': starting_distance_along_route} )
       self.has_full_data = True
     else:
+      print("%(bus_name)s added mid-route: (%(dist)f m away)" % {'bus_name': self.number, 'dist': starting_distance_along_route} )
       self.has_full_data = False
 
     for index, onward_call in enumerate(journey["OnwardCalls"]["OnwardCall"]):
@@ -200,6 +213,7 @@ class Bus:
         self.stops.append(stop_ref)
         self.stop_distances[stop_ref] = distance_along_route
         self.stop_time_pairs[stop_ref] = None
+        assert index == 0 or distance_along_route >= self.stop_distances[self.stops[index-1]] #distances should increase, ensuring the stops are in order
       if index == 0:
         self.stop_time_pairs[stop_ref] = self.start_time
       if stop_ref == journey["MonitoredCall"]["StopPointRef"]:
@@ -211,10 +225,10 @@ class Bus:
 
     segment_intervals = self.segment_intervals()
     if None in segment_intervals: # not ready to be converted to trajectory; because a stop doesn't have time data.
-      # print("%(bus_name)s trajectory conversion failed: %(segs)s " %{'bus_name': self.number, 'segs': segment_intervals})
+      print("%(bus_name)s trajectory conversion failed 1: %(segs)s " %{'bus_name': self.number, 'segs': segment_intervals})
       return None
     if not self.has_full_data:
-      # print("%(bus_name)s couldn't be converted to a trajectory" % {'bus_name': self.number})
+      print("%(bus_name)s trajectory conversion failed 2" % {'bus_name': self.number})
       return None
     # print("%(bus_name)s converted to trajectory with segment_intervals: " % {'bus_name': self.number})
     # print(segment_intervals)

@@ -85,6 +85,8 @@ class BusStop(Base):
     self.bus_is_near = False
     new_buses = {}
     trajectories = []
+
+    #populate new buses and add their position.
     for activity in vehicle_activities:
       journey = activity["MonitoredVehicleJourney"]
 
@@ -99,6 +101,8 @@ class BusStop(Base):
     logging.debug(self.route_name + " buses: " + ("["+', '.join(map(lambda x: repr(x), new_buses.values())) + "]" if new_buses.values() else "[]"))
 
     #for buses that just passed us (and that ever got close enough to have a projected arrival time):
+    #TODO: some buses disappear mid-route because their transmitter malfunctions or they're stuck or something.
+    #      we should keep track of these for a bit, rather than assuming that they're done...
     for bus_key, bus_past_stop in self.buses_on_route.items():
       if bus_key not in new_buses.keys():
 
@@ -131,10 +135,11 @@ class BusStop(Base):
             {'avg_error': int(abs(avg_error)), 'name': self.route_name, 'med': int(abs(median_error)), 
             'avg_early_late': avg_early_late, 'median_early_late': median_early_late})
           # logging.debug( self.errors)
-        trajectories.append(bus_past_stop.convert_to_trajectory(self.route_name, self.stop_id)) #calculate the right columns.
+        bus_trajectory = bus_past_stop.convert_to_trajectory(self.route_name, self.stop_id)
+        print("appending trajectory in stop", bus_trajectory)
+        trajectories.append(bus_trajectory) #calculate the right columns.
+    
     self.buses_on_route = new_buses
-
-
     for vehicle_ref, bus in self.buses_on_route.items():
       similar_trajectories = bus.find_similar_trajectories()
 
