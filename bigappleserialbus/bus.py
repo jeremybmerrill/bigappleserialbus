@@ -110,11 +110,11 @@ class Bus:
       if self.stop_time_pairs[previous_stop] is None:
         distance_traveled = previous_bus_position['distance_to_end'] - bus_position['distance_to_end']
         time_elapsed = bus_position['recorded_at'] - previous_bus_position['recorded_at']
-        # print("%(bus_name)s add_observed_position interpolated; next stop: %(stop_ref)s, so prev_stop: %(prev_stop)s" % 
-        #   {'bus_name': self.number, 'stop_ref': bus_position['next_stop'], 'prev_stop': previous_stop})
-        # print("distance: prev: %(prev_loc)fm, this: %(this_loc)fm; prev_dist: %(prev_dist)f; curtime: %(currec)s, prev: %(prevrec)s" % 
-        #   {'prev_loc': previous_bus_position['distance_to_end'], 'this_loc': bus_position['distance_to_end'], 
-        #   'prev_dist': previous_bus_position['distance_to_next_stop'], 'prevrec':previous_bus_position['recorded_at'], 'currec': bus_position['recorded_at']})
+        print("%(bus_name)s add_observed_position interpolated; next stop: %(stop_ref)s, so prev_stop: %(prev_stop)s" % 
+          {'bus_name': self.number, 'stop_ref': bus_position['next_stop'], 'prev_stop': previous_stop})
+        print("distance: prev: %(prev_loc)fm, this: %(this_loc)fm; prev_dist: %(prev_dist)f; curtime: %(currec)s, prev: %(prevrec)s" % 
+          {'prev_loc': previous_bus_position['distance_to_end'], 'this_loc': bus_position['distance_to_end'], 
+          'prev_dist': previous_bus_position['distance_to_next_stop'], 'prevrec':previous_bus_position['recorded_at'], 'currec': bus_position['recorded_at']})
         time_to_missed_stop = time_elapsed.seconds * (float(previous_bus_position['distance_to_next_stop']) / distance_traveled) 
         interpolated_prev_stop_arrival_time = timedelta(seconds=time_to_missed_stop) + previous_bus_position['recorded_at']
         self.stop_time_pairs[previous_stop] = interpolated_prev_stop_arrival_time
@@ -250,7 +250,7 @@ class Bus:
     similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, max_clusters)
     clusters_cnt = max_clusters
     while clusters_cnt > 1 and len(similar_trajectories) < minimum_similar_trajectories and len(similar_trajectories) > 0:
-      logging.debug(' '.join(map(str, ["backing off, with cluster count", clusters_cnt, "too few similar trajectories", len(similar_trajectories), "from",len(similar_trajectories_by_time), "total"])))
+      # logging.debug(' '.join(map(str, ["backing off, with cluster count", clusters_cnt, "too few similar trajectories", len(similar_trajectories), "from",len(similar_trajectories_by_time), "total"])))
       clusters_cnt = clusters_cnt / 2
       similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, clusters_cnt)
 
@@ -294,8 +294,8 @@ class Bus:
     truncated_segment_intervals = segment_intervals[:last_defined_segment_index]
     my_cluster_index, _ = vq(array([truncated_segment_intervals]), centroids)
     my_cluster_index = my_cluster_index[0]
-    logging.debug("clusters: [%(sizes)s]" % 
-      {"sizes": ', '.join([str(cluster_indices.tolist().count(idx)) + ("*" if idx == my_cluster_index else "") for idx in set(sorted(cluster_indices))])})
+    # logging.debug("clusters: [%(sizes)s]" % 
+    #   {"sizes": ', '.join([str(cluster_indices.tolist().count(idx)) + ("*" if idx == my_cluster_index else "") for idx in set(sorted(cluster_indices))])})
 
     # #find the suspiciously-large cluster... that might be the problem
     large_cluster_indices = [idx for idx in set(sorted(cluster_indices)) if cluster_indices.tolist().count(idx) > 1000] 

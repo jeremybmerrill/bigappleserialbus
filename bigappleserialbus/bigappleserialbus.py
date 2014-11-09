@@ -84,6 +84,7 @@ class BigAppleSerialBus:
         {'route_name': stop.route_name, 'count': len(stop.buses_on_route), 'end_stop_id': stop.stop_id })
       trajectories = stop.check()
       for traj in [traj for traj in trajectories if traj]:
+        logging.debug("writing trajectory:" + str(traj))
         self.session.add(traj)
 
       self.convert_to_lights(stop)
@@ -92,7 +93,7 @@ class BigAppleSerialBus:
   def broadcast_status(self):
     if self.is_on_pi:
       self.update_lights()
-    print(' '.join([stop.status() for stop in self.bus_stops]))
+    # print(' '.join([stop.status() for stop in self.bus_stops]))
 
   def convert_to_lights(self, bus_stop):
     if not self.is_on_pi:
