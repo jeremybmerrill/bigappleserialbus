@@ -132,7 +132,7 @@ class Bus:
         # 150m is (for first stop) self.stop_distances[missed_stop] - previous_bus_position['distance_along_route']
         distance_to_missed_stop = self.stop_distances[missed_stop] - previous_bus_position['distance_along_route']
         if distance_to_missed_stop < 0:
-          print(self.bus_name, missed_stop, bus_position['next_stop'], self.stop_distances[missed_stop], previous_bus_position['distance_along_route'])
+          print(self.number, missed_stop, bus_position['next_stop'], self.stop_distances[missed_stop], previous_bus_position['distance_along_route'])
         assert(distance_to_missed_stop >= 0)
         time_to_missed_stop = time_elapsed.seconds * (float(distance_to_missed_stop) / distance_traveled) 
         assert(time_to_missed_stop >= 0)
