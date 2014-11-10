@@ -117,10 +117,7 @@ class Bus:
         # print("distance: prev: %(prev_loc)fm, this: %(this_loc)fm; prev_dist: %(prev_dist)f; curtime: %(currec)s, prev: %(prevrec)s" % 
         #   {'prev_loc': previous_bus_position['distance_to_end'], 'this_loc': bus_position['distance_to_end'], 
         #   'prev_dist': previous_bus_position['distance_to_next_stop'], 'prevrec':previous_bus_position['recorded_at'], 'currec': bus_position['recorded_at']})
-        
-        # old code that I think was really broken.
-        old_wrong_time_to_missed_stop = time_elapsed.seconds * (float(previous_bus_position['distance_to_next_stop']) / distance_traveled) 
-        
+                
         # explanation of what's going on here
         #
         # bust_pos-----S------S-----bus_pos
@@ -136,9 +133,9 @@ class Bus:
         assert(distance_to_missed_stop >= 0)
         time_to_missed_stop = time_elapsed.seconds * (float(distance_to_missed_stop) / distance_traveled) 
         assert(time_to_missed_stop >= 0)
-        print("prev/curr dist: %(prev_dist)f/%(curr_dist)f, time elapsed: %(time_elapsed)i, time to stop: %(time_to)i (old: %(old)i)" %
+        print("prev/curr dist: %(prev_dist)f/%(curr_dist)f, time elapsed: %(time_elapsed)i, time to stop: %(time_to)i" %
           {'prev_dist': previous_bus_position['distance_to_end'], 'curr_dist': bus_position['distance_to_end'], 
-           'time_elapsed': time_elapsed.seconds, 'time_to': time_to_missed_stop, 'old': old_wrong_time_to_missed_stop})
+           'time_elapsed': time_elapsed.seconds, 'time_to': time_to_missed_stop})
 
         interpolated_prev_stop_arrival_time = timedelta(seconds=time_to_missed_stop) + previous_bus_position['recorded_at']
         self.stop_time_pairs[missed_stop] = interpolated_prev_stop_arrival_time
