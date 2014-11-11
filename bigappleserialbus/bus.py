@@ -127,13 +127,13 @@ class Bus:
         # 100 sec here is time_elapsed.seconds
         # 600m is distance_traveled
         # 150m is (for first stop) self.stop_distances[missed_stop] - previous_bus_position['distance_along_route']
-        distance_to_missed_stop = self.stop_distances[missed_stop] - previous_bus_position['distance_along_route']
+        distance_to_missed_stop = int(self.stop_distances[missed_stop] - previous_bus_position['distance_along_route'])
         if distance_to_missed_stop < 0:
           print(self.number, missed_stop, bus_position['next_stop'], self.stop_distances[missed_stop], previous_bus_position['distance_along_route'])
-        assert(int(distance_to_missed_stop) >= 0)
+        assert(distance_to_missed_stop >= 0)
 
-        time_to_missed_stop = time_elapsed.seconds * (float(distance_to_missed_stop) / distance_traveled) 
-        if not time_to_missed_stop >= 0
+        time_to_missed_stop = int(time_elapsed.seconds * (float(distance_to_missed_stop) / distance_traveled) )
+        if not time_to_missed_stop >= 0:
           logging.debug("time_to_missed_stop < 0: " + str(time_to_missed_stop) + " (" + str(time_elapsed.seconds) + " * " + str(distance_to_missed_stop) + " / " + str(distance_traveled) + ")")
         assert(time_to_missed_stop >= 0)
         print("prev/curr dist: %(prev_dist)f/%(curr_dist)f, time elapsed: %(time_elapsed)i, time to stop: %(time_to)i" %
