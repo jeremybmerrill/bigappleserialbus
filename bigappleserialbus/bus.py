@@ -133,6 +133,8 @@ class Bus:
         assert(int(distance_to_missed_stop) >= 0)
 
         time_to_missed_stop = time_elapsed.seconds * (float(distance_to_missed_stop) / distance_traveled) 
+        if not time_to_missed_stop >= 0
+          logging.debug("time_to_missed_stop < 0: " + str(time_to_missed_stop) + " (" + str(time_elapsed.seconds) + " * " + str(distance_to_missed_stop) + " / " + str(distance_traveled) + ")")
         assert(time_to_missed_stop >= 0)
         print("prev/curr dist: %(prev_dist)f/%(curr_dist)f, time elapsed: %(time_elapsed)i, time to stop: %(time_to)i" %
           {'prev_dist': previous_bus_position['distance_to_end'], 'curr_dist': bus_position['distance_to_end'], 
