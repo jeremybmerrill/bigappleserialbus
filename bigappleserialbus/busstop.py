@@ -23,9 +23,11 @@ from terminal_colors import green_code, red_code, yellow_code, blue_code, end_co
 
 import logging #magically the same as the one in bigappleserialbus.py
 
-write_bustime_responses_for_debug = False
-# from onpi import is_on_pi
-# write_bustime_responses_for_debug = is_on_pi()
+# write_bustime_responses_for_debug = False
+from onpi import is_on_pi
+write_bustime_responses_for_debug = is_on_pi()
+
+read_bustime_data_from_disk = (not write_bustime_responses_for_debug) and len(os.listdir(os.path.join(os.path.dirname(__file__), '..', 'debugjson'))) > 65
 
 
 time_to_get_ready = 240 # seconds
@@ -67,6 +69,7 @@ class BusStop(Base):
       self.errors = map(float, self.errors_serialized.split(","))
     else:
       self.errors = []
+    self.test_json = [os.path.join(os.path.dirname(__file__), '..', 'debugjson', name) for name in sorted(os.listdir(os.path.join(os.path.dirname(__file__), '..', 'debugjson')), reverse=True)]
 
   def add_attributes(self, stop_seconds_away, session):
     """Set non-persistant variables."""
@@ -117,9 +120,9 @@ class BusStop(Base):
         else:
           most_recent_time = check_timestamp
         bus_past_stop.fill_in_last_stop(most_recent_time)
-        if bus_past_stop.first_projected_arrival != 0.0:
-          similar_error = bus_past_stop.first_projected_arrival - time.time()
-          speeds_error  = bus_past_stop.first_projected_arrival_speeds - time.time()
+        if bus_past_stop.first_projected_arrival !=datetime.min:
+          similar_error = seconds=bus_past_stop.first_projected_arrival - datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S")
+          speeds_error  = seconds=bus_past_stop.first_projected_arrival_speeds - datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S")
 
           self.errors.append(similar_error)
           avg_error = sum(self.errors) / len(self.errors)
@@ -166,7 +169,7 @@ class BusStop(Base):
         # too close, won't make it.
         logging.debug(fail_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-            'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
+            'now': check_timestamp[0:8], 'veh': vehicle_ref
           })
         bus.too_late()
         continue
@@ -175,18 +178,18 @@ class BusStop(Base):
         bus.imminent()
         logging.debug(red_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-            'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
+            'now': check_timestamp[0:8], 'veh': vehicle_ref
           })
-        if bus.first_projected_arrival == 0.0:
-          bus.first_projected_arrival = time.time() + similar_seconds_away
-          bus.first_projected_arrival_speeds = time.time() + speeds_seconds_away
+        if bus.first_projected_arrival == datetime.min:
+          bus.first_projected_arrival = datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S") + timedelta(seconds=similar_seconds_away)
+          bus.first_projected_arrival_speeds = datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S") + timedelta(seconds=speeds_seconds_away)
         continue 
         # if a bus is within Time_to_go, it's necessarily within Time_to_get_ready, but I don't 
         # want it to trip the green pin too
       if similar_seconds_away < self.time_to_get_ready:
         logging.debug(green_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-            'now': str(datetime.now().time())[0:8], 'veh': vehicle_ref
+            'now': check_timestamp[0:8], 'veh': vehicle_ref
           })
         self.bus_is_near = True
         bus.near()
@@ -194,9 +197,9 @@ class BusStop(Base):
         # even if there's a red bus nearby.
 
         #for calculating error:
-        if bus.first_projected_arrival == 0.0:
-          bus.first_projected_arrival = time.time() + similar_seconds_away
-          bus.first_projected_arrival_speeds = time.time() + speeds_seconds_away
+        if bus.first_projected_arrival == datetime.min:
+          bus.first_projected_arrival = datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S") + timedelta(seconds=similar_seconds_away)
+          bus.first_projected_arrival_speeds = datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S") + timedelta(seconds=speeds_seconds_away)
 
     logging.debug(self)
     self.prep_for_writing()
@@ -217,35 +220,42 @@ class BusStop(Base):
             {'key': self.mta_key, 'stop': self.stop_id, 'onw': 'calls'}
     # logging.debug("locations: " + requestUrl)
     resp = None
-    for i in xrange(0,4):
+    if read_bustime_data_from_disk:
       try:
-        response = urllib2.urlopen(requestUrl)
-        #this only happens if the attempt to get the data fails 4 times.
-        if not response:
-          raise urllib2.URLError("Couldn't reach BusTime servers...")
+        with open(self.test_json.pop(), 'r') as jsonfile:
+          resp = json.loads(jsonfile.read())
+      except IndexError:
+        raise IndexError("test finished successfully")
+    else: 
+      for i in xrange(0,4):
+        try:
+          response = urllib2.urlopen(requestUrl)
+          #this only happens if the attempt to get the data fails 4 times.
+          if not response:
+            raise urllib2.URLError("Couldn't reach BusTime servers...")
 
-        jsonresp = response.read()
-        try: 
-          resp = json.loads(jsonresp)
-        except ValueError:
-          raise urllib2.URLError("Bad JSON: " + jsonresp)
-        except Exception as e:
-          raise e
-        finally:
-          if i > 0:
-            logging.debug("getting data failed before, but worked this time")
-          break
-      except (urllib2.URLError, SocketError, BadStatusLine) as e: 
-        logging.debug("getting data failed, trying again (%(i)i/4)" % {'i': i+1})
-        response = None
-        resp = None
-        if i == 3:
-          logging.debug("getting data failed 4 times (except->if branch)")
-          return (None, None, False)
-        time.sleep(10 * i)
-    else:
-      logging.debug("getting data failed 4 times (else branch)")
-      return (None, None, False)
+          jsonresp = response.read()
+          try: 
+            resp = json.loads(jsonresp)
+          except ValueError:
+            raise urllib2.URLError("Bad JSON: " + jsonresp)
+          except Exception as e:
+            raise e
+          finally:
+            if i > 0:
+              logging.debug("getting data failed before, but worked this time")
+            break
+        except (urllib2.URLError, SocketError, BadStatusLine) as e: 
+          logging.debug("getting data failed, trying again (%(i)i/4)" % {'i': i+1})
+          response = None
+          resp = None
+          if i == 3:
+            logging.debug("getting data failed 4 times (except->if branch)")
+            return (None, None, False)
+          time.sleep(10 * i)
+      else:
+        logging.debug("getting data failed 4 times (else branch)")
+        return (None, None, False)
     try:
       vehicle_activities = resp["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"]
     except Exception as e:

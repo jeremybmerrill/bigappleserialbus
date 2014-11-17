@@ -18,7 +18,7 @@ else:
 
 from operator import itemgetter
 import time
-from busstop import BusStop
+from busstop import BusStop, read_bustime_data_from_disk
 import yaml
 import os
 from ticker import Ticker
@@ -32,13 +32,15 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from busstop import Base
 
+print("debug?", read_bustime_data_from_disk)
+
 class BigAppleSerialBus:
   is_on_pi = False
   lights = {}
 
   #The MTA's bustime website pings every 15 seconds, so I feel comfortable doing the same.
-  between_checks = 15 #seconds
-  between_status_updates = 3 #seconds
+  between_checks = 15 if not read_bustime_data_from_disk else 0 #seconds
+  between_status_updates = 3 if not read_bustime_data_from_disk else 0  #seconds
 
   def __init__(self):
     self.is_on_pi = is_on_pi()
@@ -82,7 +84,8 @@ class BigAppleSerialBus:
       trajectories = stop.check()
       for traj in [traj for traj in trajectories if traj]:
         logging.debug("writing trajectory:" + str(traj))
-        self.session.add(traj)
+        if not read_bustime_data_from_disk: 
+          self.session.add(traj)
 
       self.convert_to_lights(stop)
     self.session.commit()
@@ -127,11 +130,12 @@ class BigAppleSerialBus:
     flat_lights = [item for sublist in [d.values() for d in self.lights.values()] for item in sublist]
     for light in flat_lights:
       light.on()
-      time.sleep(2)
+      if not read_bustime_data_from_disk:
+        time.sleep(2)
       light.off()
 
   def __init_ticker__(self):
-    ticker = Ticker()
+    ticker = Ticker(None if not read_bustime_data_from_disk else 0)
     ticker.register(self.check_buses, self.between_checks)
     #TODO: only print new status on non-15-sec ticks if it hasn't changed
     ticker.register(self.broadcast_status, self.between_status_updates)
@@ -154,10 +158,12 @@ class BigAppleSerialBus:
       while True:
         for red_light in [light_pair['red'] for light_pair in light_pairs]:
           red_light.on()
-        time.sleep(5)
+        if not read_bustime_data_from_disk:
+          time.sleep(5)
         for red_light in [light_pair['red'] for light_pair in light_pairs]:
           red_light.off()
-        time.sleep(5)
+        if not read_bustime_data_from_disk:
+          time.sleep(5)
     else:
       raise error
 

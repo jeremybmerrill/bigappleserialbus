@@ -18,7 +18,7 @@ class Ticker:
 
   def __tick__(self):
     for func, frequency in self.tickers.iteritems():
-      if self.ticksSoFar % frequency == 0:
+      if frequency == 0 or self.ticksSoFar % frequency == 0:
         func()
 
   def register(self, function, frequency):
