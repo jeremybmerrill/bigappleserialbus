@@ -46,7 +46,7 @@ class Bus:
     self.green_light_time = None
     self.seconds_away = None
 
-    self.first_projected_arrival = 0
+    self.first_projected_arrival = datetime.min
     self.first_projected_arrival_speeds = 0
     self.set_trajectory_points(journey)
 
@@ -55,7 +55,7 @@ class Bus:
     if self.seconds_away :
       seconds_away_str = " %(sec)i s/a" %  { 'sec': self.seconds_away }
     if self.first_projected_arrival and self.seconds_away:
-      seconds_away_str += ", FP: %(fp)s" % {'fp': str(datetime.fromtimestamp(self.first_projected_arrival))[11:19]}
+      seconds_away_str += ", FP: %(fp)s" % {'fp': str(self.first_projected_arrival)[11:19]}
 
     return "<Bus #%(number)s%(full_data)s %(route)s/%(stop)s%(sec)s>" % {
           'number': self.number,
