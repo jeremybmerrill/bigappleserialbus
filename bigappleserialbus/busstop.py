@@ -24,6 +24,9 @@ from terminal_colors import green_code, red_code, yellow_code, blue_code, end_co
 import logging #magically the same as the one in bigappleserialbus.py
 
 write_bustime_responses_for_debug = False
+# from onpi import is_on_pi
+# write_bustime_responses_for_debug = is_on_pi()
+
 
 time_to_get_ready = 240 # seconds
 time_to_go = 180 #seconds
