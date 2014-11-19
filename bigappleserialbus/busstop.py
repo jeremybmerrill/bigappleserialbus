@@ -124,7 +124,7 @@ class BusStop(Base):
           similar_error = seconds=bus_past_stop.first_projected_arrival - datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S")
           speeds_error  = seconds=bus_past_stop.first_projected_arrival_speeds - datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S")
 
-          self.errors.append(similar_error)
+          self.errors.append(similar_error.seconds)
           avg_error = sum(self.errors) / len(self.errors)
           median_error = sorted(self.errors)[len(self.errors) / 2]
 
