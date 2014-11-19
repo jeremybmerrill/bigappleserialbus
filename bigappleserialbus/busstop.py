@@ -121,10 +121,10 @@ class BusStop(Base):
           most_recent_time = check_timestamp
         bus_past_stop.fill_in_last_stop(most_recent_time)
         if bus_past_stop.first_projected_arrival !=datetime.min:
-          similar_error = seconds=bus_past_stop.first_projected_arrival - datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S")
-          speeds_error  = seconds=bus_past_stop.first_projected_arrival_speeds - datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S")
+          similar_error = (bus_past_stop.first_projected_arrival - datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S")).seconds
+          speeds_error  = (bus_past_stop.first_projected_arrival_speeds - datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S")).seconds
 
-          self.errors.append(similar_error.seconds)
+          self.errors.append(similar_error)
           avg_error = sum(self.errors) / len(self.errors)
           median_error = sorted(self.errors)[len(self.errors) / 2]
 
