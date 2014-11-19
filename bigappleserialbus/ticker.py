@@ -9,12 +9,12 @@ import time
 
 class Ticker:
 
-  def __init__(self, betweenTicks=1):
+  def __init__(self, betweenTicks=None):
     """Returns a ticker. Optionally set the amount of time per tick."""
     self.tickers = {}
     self.ticksSoFar = 0
     self.error_callbacks = []
-    self.betweenTicks = betweenTicks #time in seconds
+    self.betweenTicks = 1 if betweenTicks == None else betweenTicks #time in seconds
 
   def __tick__(self):
     for func, frequency in self.tickers.iteritems():
