@@ -25,7 +25,7 @@ import logging #magically the same as the one in bigappleserialbus.py
 
 # write_bustime_responses_for_debug = False
 from onpi import is_on_pi
-write_bustime_responses_for_debug = is_on_pi()
+write_bustime_responses_for_debug = False #is_on_pi()
 
 read_bustime_data_from_disk = (not write_bustime_responses_for_debug) and len(os.listdir(os.path.join(os.path.dirname(__file__), '..', 'debugjson'))) > 65
 
