@@ -27,7 +27,7 @@ import logging #magically the same as the one in bigappleserialbus.py
 from onpi import is_on_pi
 write_bustime_responses_for_debug = False #is_on_pi()
 
-read_bustime_data_from_disk = (not write_bustime_responses_for_debug) and len(os.listdir(os.path.join(os.path.dirname(__file__), '..', 'debugjson'))) > 65
+read_bustime_data_from_disk = (not is_on_pi()) and len(os.listdir(os.path.join(os.path.dirname(__file__), '..', 'debugjson'))) > 65
 
 
 time_to_get_ready = 240 # seconds
@@ -69,7 +69,8 @@ class BusStop(Base):
       self.errors = map(float, self.errors_serialized.split(","))
     else:
       self.errors = []
-    self.test_json = [os.path.join(os.path.dirname(__file__), '..', 'debugjson', name) for name in sorted(os.listdir(os.path.join(os.path.dirname(__file__), '..', 'debugjson')), reverse=True)]
+    files_for_this_stop = [f for f in os.listdir(os.path.join(os.path.dirname(__file__), '..', 'debugjson')) if f.split('.')[0] == self.route_name and f.split('.')[1] == self.stop_id]
+    self.test_json = [os.path.join(os.path.dirname(__file__), '..', 'debugjson', name) for name in sorted(files_for_this_stop, reverse=True)]
 
   def add_attributes(self, stop_seconds_away, session):
     """Set non-persistant variables."""
