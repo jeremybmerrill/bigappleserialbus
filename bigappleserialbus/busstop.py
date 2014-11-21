@@ -128,13 +128,13 @@ class BusStop(Base):
           # ugh python's timedelta handling is awful.
           # you can't have negative seconds, so -4 seconds is -1 days and 86396 seconds.
           if similar_error.days < 0:
-            similar_error = (-similar_error).seconds
+            similar_error = int(-(-similar_error).seconds)
           else:
-            similar_error = similar_error.seconds
+            similar_error = int(similar_error.seconds)
           if speeds_error.days < 0:
-            speeds_error = (-speeds_error).seconds
+            speeds_error = int(-(-speeds_error).seconds)
           else:
-            speeds_error = speeds_error.seconds
+            speeds_error = int(speeds_error.seconds)
 
           self.errors.append(similar_error)
           avg_error = sum(self.errors) / len(self.errors)
