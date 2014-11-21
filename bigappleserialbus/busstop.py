@@ -122,8 +122,19 @@ class BusStop(Base):
           most_recent_time = check_timestamp
         bus_past_stop.fill_in_last_stop(most_recent_time)
         if bus_past_stop.first_projected_arrival !=datetime.min:
-          similar_error = (bus_past_stop.first_projected_arrival - datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S")).seconds
-          speeds_error  = (bus_past_stop.first_projected_arrival_speeds - datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S")).seconds
+          similar_error = bus_past_stop.first_projected_arrival - datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S")
+          speeds_error  = bus_past_stop.first_projected_arrival_speeds - datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S")
+          
+          # ugh python's timedelta handling is awful.
+          # you can't have negative seconds, so -4 seconds is -1 days and 86396 seconds.
+          if similar_error.days < 0:
+            similar_error = (-similar_error).seconds
+          else:
+            similar_error = similar_error.seconds
+          if speeds_error.days < 0:
+            speeds_error = (-speeds_error).seconds
+          else:
+            speeds_error = speeds_error.seconds
 
           self.errors.append(similar_error)
           avg_error = sum(self.errors) / len(self.errors)
