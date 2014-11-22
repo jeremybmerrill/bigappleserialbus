@@ -1,0 +1,25 @@
+{
+  "name": "bigappleserialbus",
+  "version": "0.0.1",
+  "homepage": "https://github.com/jeremybmerrill/bigappleserialbus",
+  "authors": [
+    "Jeremy B. Merrill <jeremybmerrill@gmail.com>"
+  ],
+  "license": "Apache",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "public/lib/bower"
+  ],
+  "dependencies": {
+    "adcom": "git@github.com:newsdev/adcom.git#v0.1.0-rc10",
+    "jquery": "~2.1.1",
+    "backbone": "~1.1.2",
+    "underscore": "~1.7.0",
+    "bootstrap": "~3.2.0"
+  }
+}
