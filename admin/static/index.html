@@ -7,15 +7,14 @@
   <script src="lib/bower/underscore/underscore-min.js" type="text/javascript"></script>
   <script src="lib/bower/backbone/backbone.js" type="text/javascript"></script>
   <script src="lib/bower/bootstrap/dist/js/bootstrap.min.js" type="text/javascript"></script>
+  <script src="lib/bower/typeahead.js/dist/typeahead.bundle.min.js" type="text/javascript"></script>
   <script src="lib/bower/adcom/dist/js/adcom.js" type="text/javascript"></script>
   <script type="text/javascript" src="admin.js"></script>
   <link rel="stylesheet" type="text/css" href="lib/bower/bootstrap/dist/css/bootstrap.min.css"></script>
   <link rel="stylesheet" type="text/css" href="lib/bower/adcom/dist/css/adcom.css"></script>
   <link rel="stylesheet" type="text/css" href="admin.css"></script>
-  <script type="text/javascript" src="http://typeface.nytimes.com/zam5nzz.js"></script>
   <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
 </head>
-
 <body>
 
 <nav class="navbar navbar-default" role="navigation">
@@ -40,8 +39,8 @@
       <div class="container">
         <p>
           <span class="drawer-visible-on-out">How to Add Your Bus Routes</span>
-          <span class="drawer-visible-on-in">Hide Instructions</span>
-          <span class="vee"></span>
+<!--           <span class="drawer-visible-on-in">Hide Instructions</span>
+ -->          <span class="vee"></span>
         </p>
       </div>
     </a>
@@ -62,71 +61,59 @@
       <ul class="nav navbar-nav navbar-left">
         <li>
           <span class="navbar-resource navbar-text">
-            Documents uploaded in the past week
+            Buses You're Tracking
           </span>
+
+          <button class="btn btn-success btn-adcom" data-toggle="modal" data-target="#form-modal">Add Bus</button>
         </li>
       </ul>
-      <ul class="nav navbar-nav navbar-right">
+
+      <ul style="display: none;" class="nav navbar-nav navbar-right">
         <li>
-          <a href="#" class="sort-control sort-descending" data-target="#documents" data-sort="date">Sort by Date</a>
+          <a href="#" class="sort-control sort-descending" data-target="#buses" data-sort="date">Sort by Date</a>
         </li>
         <li>
-          <a href="#" class="sort-control" data-target="#documents" data-sort="title">Sort by Title</a>
+          <a href="#" class="sort-control" data-target="#buses" data-sort="title">Sort by Title</a>
         </li>
         <li>
-          <a href="#" class="sort-control" data-target="#documents" data-sort="source">Sort by Source</a>
+          <a href="#" class="sort-control" data-target="#buses" data-sort="source">Sort by Source</a>
         </li>
       </ul>
+
     </div>
   </div>
 
-  <ol id="documents" class="list list-hover list-bordered hide border-top border-bottom">
-    <li class="list-item default document clearfix"
+  <ol id="buses" class="list list-hover list-bordered hide border-top border-bottom">
+    <li class="list-item default bus clearfix"
         data-source="ac.list.item">
-        <!--data-serialized="<%= _.escape(JSON.stringify(doc)) %>">-->
-
-      <div>
         <div class="container">
           <div class="row">
 
             <div class="col-md-2 col-sm-3">
-                <% if (doc.source){ %>
-                  <p><strong data-field="source"></strong></p>
-                <% } %>
-                <% if (doc.scoop_asset_id){ %>
-<!--                   <p class="alert alert-danger" >This Document already has an embed in Scoop. <a class="scoop asset-exists" href="<%= doc.scoop_url %>">Open in Scoop</a> to edit. (You probably don't want to create a duplicate.)                 
-                  </p>
--->
-                 <span class="label label-danger"><a class="scoop asset-exists" href="<%= doc.scoop_url %>">Published</a></span>
-                <% } %>
-                <p class="date-pages content-metadata"><span data-field="date"></span><span><span data-field="pages"></span> Page<% if (doc.pages != 1) { %>s<% } %></span></p>
+              <h5 class="bus-route_name" data-field="route_name"></h5>
+              <p>Stop #<span class="bus-stop" data-field="stop"></span></p>
             </div>
 
             <div class="content-primary">
               <div class="col-md-7 col-sm-6 border-left">
-                <div class="document-info document-area">
-                  <div class="img pull-left"><img src="<%= doc.resources.thumbnail %>"></div>
-                  <h5 class="document-title" data-field="title"></h5>
-                  <p class="description" data-field="description"></p>
+                <div class="bus-info bus-area">
+                  <p><span class="bus-destination" data-field="routeDescription"></span></p>
+                  <p>To <span class="bus-destination" data-field="destination"></span></p>
+                  <p><span class="bus-distance" data-field="distance"></span> seconds away</p>
+                  <p>Green Pin: <span class="bus-greenPin" data-field="greenPin"></span></p>
+                  <p>Red Pin: <span class="bus-redPin" data-field="redPin"></span></p>
                 </div>
               </div>
             </div>
 
             <div class="col-md-3 col-sm-3 text-right">
-              <div class="document-actions document-area">
+              <div class="bus-actions bus-area">
                 <div class="btn-group">
-                  <button type="button" class="make-viewer btn btn-adcom btn-primary">Create in Scoop</button>
-                  <button type="button" class="btn btn-primary btn-adcom dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                    <span class="caret"></span>
-                    <span class="sr-only">Toggle Dropdown</span>
-                  </button>
-                  <ul class="dropdown-menu" role="menu">
-                    <li>
-                      <a href="<%= doc.canonical_url %>" class="doc-edit" >DocumentCloud &raquo;</a>
-                    </li>
-                    <li class="divider"></li>
-                    <li><a href="<%= doc.pdf_direct_url %>">Direct PDF Link &raquo;</a></li>
-                  </ul>
+                   <!--<button type="button" class="btn btn-adcom btn-primary edit" 
+                          data-toggle="form" 
+                          data-target="#bus-form" 
+                          data-source="ac.list.item">Edit</button>-->              
+                  <button type="button" class="bus-delete btn btn-adcom btn-danger">Delete</button>
                 </div>
               </div>
             </div>
@@ -140,144 +127,88 @@
   <div id="footer">
     <div class="container">
       <div class="row">
-        <h4 class="col-md-4 col-sm-4" style="padding-left: 0;">Can't find your document? </h4>
-        <div class="col-md-4 col-sm-4">
-          <div class="input-group glyphicon-input doc-url-container">
-            <input class="doc-url form-control" type="text" placeholder="Document URL">
-            <i class="glyphicon glyphicon-search"></i>
-            <span class="input-group-btn">
-              <span class="submit-doc-url btn btn-adcom btn-primary">Find</span>
-            </span>
-          </div>
-        </div>
         <p style="clear: both;">warning or whatever</p>
       </div>
     </div>
   </div>
 
-<div id="link" class="link" data-control="link">
-  <div class="modal fade" id="form-modal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <button class="close" type="button"
-                  data-toggle="modal"
-                  data-target="#form-modal" >
-            <span aria-hidden="true">×</span>
-          </button>
-          <h4 class="modal-title link-visible-on-create">Export Your Document to a New Scoop Asset</h4>
-          <p class="text-danger link-visible-on-create" id="scoop-dupe-alert" style="display: none;">
-            This document embed already exists in a <a href="">Scoop asset</a>. Are you sure you want to create another one?
-          </p>
-          <p class="help-block">Select a section and create a descriptive slug that will become part of the document's public URL.</p>
-        </div>
-        <div class="modal-body">
-          <form class="form-horizontal link-create link-edit" data-control="form" id="document-form">
-            <input type="hidden" id="headline" name="headline">
-            <input type="hidden" id="leadin" name="leadin">
-            <input type="hidden" id="date" name="date">
-            <input type="hidden" id="thumbnail_url" name="thumbnail_url">
-            <input type="hidden" id="first_page_image_url" name="first_page_image_url">            
-            <input type="hidden" id="pages" name="pages">
-            <input type="hidden" id="externalId" name="externalId">
+<div class="modal fade" id="form-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button class="close" type="button"
+                data-toggle="modal"
+                data-target="#form-modal" >
+          <span aria-hidden="true">×</span>
+        </button>
+        <h4 class="modal-title link-visible-on-create">Track This Bus!</h4>
+        <p class="help-block">Asdf asdf asdf TK</p>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal link-create link-edit" data-control="form" id="bus-form">
+          <input type="hidden" id="routeName" name="route_name">
+          <input type="hidden" id="stop" name="stop">
+          <input type="hidden" id="destinationId" name="destinationId">
 
-            <div class="row">
-              <div class="col-sm-8 border-right">
-                <div class="form-group">
-                  <label class="control-label col-sm-3" for="section">Section</label>
-                  <div class="col-sm-9">
-                    <select id="section" class="form-control input-sm scoop-section" name="section" required>
-                      <option selected="selected" value="">Select a section</option>
-                    </select>
-                  </div>
+          <div class="row">
+              <div class="form-group">
+                <label class="control-label col-sm-3" for="routeDescription">Bus Route</label>
+                <div class="col-sm-8">
+                  <input type="text" placeholder="the bus route's number (e.g. B63), the street it runs on or its destination" name="routeDescription" id="routeDescription" class="form-control input-sm typeahead" />
                 </div>
-                <div class="form-group">
-                  <label class="control-label col-sm-3" for="subSection">Subsection</label>
-                  <div class="col-sm-9">
-                    <select id="subsection" class="form-control input-sm scoop-subsection" name="subSection" disabled>
-                      <option selected="selected" value="">Select a subsection</option>
-                    </select>
-                  </div>
+              </div>
+              <div class="form-group">
+                <label class="control-label col-sm-3" for="destination">Direction</label>
+                <div class="col-sm-8">
+                  <select id="destination" class="form-control input-sm" name="destination">
+                    <option selected="selected" value="">Select a destination....</option>
+                  </select>
                 </div>
-                <div class="form-group field slug">
-                  <label class="control-label col-sm-3" for="slug">Slug</label>
-                  <div class="col-sm-9">
-                    <input class="form-control input-sm" id="slug" name="slug" placeholder="e.g. 00document" required>
-                  </div>
+              </div>
+              <div class="form-group">
+                <label class="control-label col-sm-3" for="stopName">Stop</label>
+                <div class="col-sm-8">
+                  <input class="form-control input-sm typeahead" id="stopName" name="stopName" placeholder="your stop's MTA ID or cross-street...">
                 </div>
-                <div class="form-group">
-                  <label class="control-label col-sm-3" for="document_cloud_id">DocCloud ID</label>
-                  <div class="col-sm-9">
-                    <input disabled name="document_cloud_id" required class="form-control input-sm">
-                  </div>
-                </div>
+              </div>
 
-                <div class="drawer">
-                  <a class="drawer-toggle" data-toggle="collapse" href="#advanced-options">Advanced Options</a>
+              <div class="form-group">
+                <label class="control-label col-sm-4" for="distance">How long, in seconds, does it take you to walk to this bus stop?</label>
+                <div class="col-sm-3">
+                  <input type="number" id="distance" name="distance" class="form-control advanced-option" value="60" min="0" max="300" required>
+                </div>
+              </div>
 
-                  <div id="advanced-options" class="collapse">
-                    <div class="form-group">
-                      <label for="sidebar" class="control-label col-sm-3">Show Sidebar?</label>
-                      <div class="col-sm-9">
-                        <input type="checkbox" id="sidebar" name="sidebar" class="form-control advanced-option">
-                      </div>
+              <div class="drawer">
+                <a class="drawer-toggle" data-toggle="collapse" href="#advanced-options">Advanced Options</a>
+                <div id="advanced-options" class="collapse">
+                  <div class="form-group">
+                    <label for="greenPin" class="control-label col-sm-4">Green Pin Number</label>
+                    <div class="col-sm-3">
+                      <input type="number" id="greenPin" name="greenPin" class="form-control advanced-option" min="3" max="26">
                     </div>
-                    <div class="form-group">
-                      <label for="startpage" class="control-label col-sm-3">Start Page</label>
-                      <div class="col-sm-3">
-                        <input type="number" id="startpage" name="startpage" class="form-control advanced-option startpage" value="1" min="1">
-                      </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="redPin" class="control-label col-sm-4">Red Pin Number</label>
+                    <div class="col-sm-3">
+                      <input type="number" id="redPin" name="redPin" class="form-control advanced-option" min="3" max="26">
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div class="col-sm-4">
-                <h5>In Scoop, be sure to:</h5>
-                <em>
-                  <ul>
-                    <li>Preview the interactive.</li>
-                    <li>Add a link in the body text of your article for mobile readers to the nytimes.com embed of your document.</li>
-                  </ul>
-                </em>
-              </div>
-            </div>
+          </div>
 
-            <div class="form-group drawer drawer-default">
-              <div class="col-sm-5 document-preview">
-                <div class="document-metadata document-area">
-                  <h4 class="preview-title" name="headline"></h4>
-                  <div class="img preview-img pull-left">
-                    <img src="">
-                  </div>
-                  <div class="date-pages help-block pull-left">
-                    <p class="content-metadata">
-                      <span class="preview-date"></span>
-                      <span class="preview-pages"></span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-3 border-right">
-                <input class="btn btn-primary btn-lg btn-adcom document-area document-export pull-right" value="Save to Scoop" type="submit" id="export">
-              </div>
-              <div class="col-sm-4">
-                <em id="you-will-be" class="help-block">You will be taken directly to your <span class='link-visible-on-create'>new</span> asset in Scoop.</em>
-              </div>
+          <div class="form-group drawer drawer-default">
+            <div class="col-sm-8">
+              <em id="you-will-be" class="help-block">Post-submit instrux</em>
             </div>
-
-            <p>
-              <strong>
-                If you plan to publish this document in WordPress, Room for Debate, or another non-Scoop platform, copy the embed code <a href="#manual-embed" class="drawer-toggle collapsed manually" data-toggle="collapse">(show)</a> and manually embed your document.
-              </strong>
-            </p>
-            <div class="collapse" id="manual-embed">
-              <p><strong>Copy and paste this embed into the article, or follow your platform's specific instructions.</strong></p>
-              <textarea id="embed-code" name="freeForm" class="form-control" rows="10" ></textarea>
+            <div class="col-sm-3 border-right">
+              <input class="btn btn-primary btn-lg btn-adcom bus-area pull-right" value="Save" type="submit">
             </div>
+          </div>
 
-          </form>
-        </div>
+        </form>
       </div>
     </div>
   </div>
