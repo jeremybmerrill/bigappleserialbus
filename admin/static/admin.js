@@ -89,11 +89,21 @@ $(function(){
     })
   };
 
-  preprocessConfigItems = function(i){
-    i.destination = i.destination || "Destination TK";
-    i.destinationId = i.destinationId || "1";
-    i.routeDescription = i.routeDescription || '';
-    return i;
+  preprocessConfigItems = function(item, index){
+    item.destination = item.destination || "Destination TK";
+    item.destinationId = item.destinationId || "1";
+    item.routeDescription = item.routeDescription || '';
+
+    getRouteInfo(item, index);
+
+    return item;
+  }
+
+  getRouteInfo = function(i, index){
+    $.getJSON('/businfo/MTA%20NYCT_' + i.route_name.toUpperCase() + "/" + i.stop, function(resp){
+      $('#buses').list('update', index, _.extend(i, resp));
+      console.log(index, _.extend(i, resp));
+    })
   }
 
   clearDirections = function(){

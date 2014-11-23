@@ -2,6 +2,23 @@
     list-style: none;
 }
 
+#app {
+  margin-left: auto;
+  margin-right: auto;
+  width: 70%;
+}
+
+#add-bus {
+  margin-right: 15px;
+  margin-left: 45px;
+  margin-top: 7px;
+  margin-bottom: 10px;
+}
+
+#advanced-options-toggle {
+  margin-left: 15px;
+}
+
 /* list styles that didn't make it into the compiled thing */
 .list .list-item {
   padding: 10px 6px 10px 0;
