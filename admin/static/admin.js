@@ -77,32 +77,33 @@ $(function(){
         $.post("/buses", postprocess(e.object), function(){ window.location.reload() } );
       });
 
-      $('.bus-delete').on('click', function(e){
-        var index = $('.bus').index($(e.currentTarget).parents('.bus'));
-        console.log(index);
-        $.ajax({
-          url: 'buses/' + index, 
-          method: 'DELETE',
-          success: function(){ window.location.reload() }
-        });
-      })
+      $('.bus-delete').off('click').on('click', deleteBus);
     })
   };
+
+  deleteBus = function(e){
+    console.log(e);
+    var index = $('.bus').index($(e.currentTarget).parents('.bus'));
+    console.log(index);
+    $.ajax({
+      url: 'buses/' + index, 
+      method: 'DELETE',
+      success: function(){ window.location.reload() }
+    });
+  }
 
   preprocessConfigItems = function(item, index){
     item.destination = item.destination || "Destination TK";
     item.destinationId = item.destinationId || "1";
     item.routeDescription = item.routeDescription || '';
-
     getRouteInfo(item, index);
-
     return item;
   }
 
   getRouteInfo = function(i, index){
     $.getJSON('/businfo/MTA%20NYCT_' + i.route_name.toUpperCase() + "/" + i.stop, function(resp){
       $('#buses').list('update', index, _.extend(i, resp));
-      console.log(index, _.extend(i, resp));
+      $('.bus-delete').off('click').on('click', deleteBus);
     })
   }
 

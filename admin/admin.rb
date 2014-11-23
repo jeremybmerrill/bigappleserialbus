@@ -1,9 +1,12 @@
+require "rack/cache"
 require 'sinatra'
 require "sinatra/reloader" if development?
 require 'nokogiri'
 require 'net/http'
 require 'json'
 require 'yaml'
+
+use Rack::Cache
 
 set :public_folder, File.join(File.dirname(__FILE__), 'static')
 
@@ -18,7 +21,6 @@ open(CONFIG_PATH, 'r') do |f|
   $config = YAML.load f.read
 end
 
-#TODO: stash these things?
 #TODO: caching (like etags and stuff)
 
 def getRoutes
@@ -81,16 +83,22 @@ def write_config!
 end
 
 def pickPins
+  #TODO: return two pins that are unoccupied
+  validGPIOPins = [0, 1, 4, 7, 8, 9, 10, 11, 14, 15, 17, 18, 21, 22, 23, 24, 25]
 
+  occupiedPins = $config["stops"].map{|c| [c["redPin"], c["greenPin"]] }.flatten
+
+  (validGPIOPins - occupiedPins).sample(2)
 end
 
 def createYamlEntry(params)
+  pins = pickPins
   {
     "route_name" => params["route_name"][9..-1].downcase, # "MTA NYCT_B65" => "b65"
     "stop" => params["stop"],
     "distance" => params["distance"],
-    "redPin" => params["redPin"],
-    "greenPin" => params["greenPin"],
+    "redPin" => params["redPin"].empty? ? pins[0] : params["redPin"],
+    "greenPin" => params["greenPin"].empty? ? pins[1] : params["greenPin"],
   }
 end
 
@@ -99,22 +107,27 @@ get '/' do
 end
 
 get '/apikey' do
+  cache_control :public, :max_age => 86400
   APIKEY
 end
 
 get '/buses' do 
+  cache_control :public, :max_age => 86400
   JSON.dump getRoutes
 end
 
 get '/buses/:id' do
+  cache_control :public, :max_age => 86400
   JSON.dump getDestinations(params[:id])
 end
 
 get '/buses/:routeId/:directionId' do
+  cache_control :public, :max_age => 86400
   JSON.dump getStops(params[:routeId], params[:directionId])
 end
 
 get '/businfo/:routeId/:stopId' do
+  cache_control :public, :max_age => 86400
   JSON.dump(routeInfo(params[:routeId], params[:stopId]).merge(stopInfo(params[:stopId])))
 end
 
