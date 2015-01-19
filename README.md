@@ -23,7 +23,7 @@ install
 6. get the GTFS stop identifier for your line from the [VehicleMonitoring](http://bustime.mta.info/wiki/Developers/SIRIVehicleMonitoring) API. (Literally watch the feed until a bus is at your stop, then record the stop identifier); paste that into the config file.
 7. sudo python bigappleserialbus.py
 8. to run on startup, add this line to `/etc/rc.local`: <pre>(sleep 10; python /home/pi/bigappleserialbus/bigappleserialbus)&</pre>
-
+9. optional (TODO:): set a cron to restart every day at midnight (or 4 am or whatever), since there's some unstable-ness around the wifi
 hardware
 --------
 512mb raspberry pi
@@ -62,6 +62,8 @@ Walking time is the sum of the time it takes to get out of your apartment to the
 
 Bus arrival times are predicted using k-means clustering -- that is, BIG DATA ANALYTICS AND MACHINE LEARNING -- to based on previous, similar bus trajectories collected while the script runs. Inspired by [this academic paper](http://www.iis.sinica.edu.tw/~cclljj/publication/2012/12_GIS-HTTP.pdf).
 
+All trajectories are used except those where any single segment took longer than 300 seconds, on the theory that a bus that waits 5 minutes at a stop has suffered some sort of exception (sick passenger? fight? breakdown?) that makes it unsuitable for prediction.
+
 will this work in my city?
 --------------------------
 I dunno, maybe!
@@ -80,6 +82,7 @@ ideas for later:
 1. Blink for 20 secs when it's really time to run.
 1. use a shift register to support > 4 bus routes or use fewer GPIO ports
 1. ubuntu unity taskbar widget?
+1. test various ways to come up with similarity by keeping track of data over an entire test run.
 
 license
 -------

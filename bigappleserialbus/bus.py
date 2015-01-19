@@ -20,6 +20,7 @@ from numpy import vstack,array
 from numpy.random import rand
 from scipy.cluster.vq import kmeans,vq
 import kmodes
+from sklearn.neighbors import NearestNeighbors
 
 import logging #magically the same as the one in bigappleserialbus.py
 
@@ -27,7 +28,10 @@ default_bus_speed = 4 # m/s ~= 8 miles per hour
 #sometimes the bus, at the terminal where it starts, reports itself as, e.g. 0.2 meters along the route.
 #this is used to decide that, yes, it's still at the start of the route.
 max_gps_error = 20 #meters
-minimum_similar_trajectories = 10
+
+# any segment longer than this disqualifies the trajectory, since something went wonky here
+MAX_SEGMENT_TIME = 300 
+MIN_SEGMENT_TIME = 20
 
 class Bus:
   def __init__(self, number, journey, route_name, end_stop_id, session):
@@ -45,6 +49,7 @@ class Bus:
     self.red_light_time = None
     self.green_light_time = None
     self.seconds_away = None
+    self.error = None
 
     self.first_projected_arrival = datetime.min
     self.first_projected_arrival_speeds = 0
@@ -70,6 +75,7 @@ class Bus:
     bus_position = {
       'recorded_at': datetime.strptime(recorded_at_str[:19], "%Y-%m-%dT%H:%M:%S"), #recorded_at
       'next_stop': journey["OnwardCalls"]["OnwardCall"][0]["StopPointRef"], #next_stop_ref
+      'next_stop_name': journey["OnwardCalls"]["OnwardCall"][0]["StopPointName"],
       'distance_along_route': journey["MonitoredCall"]["Extensions"]["Distances"]["CallDistanceAlongRoute"] - journey["MonitoredCall"]["Extensions"]["Distances"]["DistanceFromCall"],
       'distance_to_end': journey["MonitoredCall"]["Extensions"]["Distances"]["DistanceFromCall"], #distance_from_call
       'distance_to_next_stop': journey["OnwardCalls"]["OnwardCall"][0]["Extensions"]["Distances"]["DistanceFromCall"],
@@ -160,6 +166,7 @@ class Bus:
     # print the progress so far.
     # print(self.number + ": ")
     # print([(stop_ref, self.stop_time_pairs[stop_ref].strftime("%H:%M:%S")) if self.stop_time_pairs[stop_ref] else (stop_ref,) for stop_ref in self.stops ])
+    # print('')
 
   def fill_in_last_stop(self, recorded_at_str):
     """Fill in the last element in the stop_time_pairs.
@@ -239,6 +246,7 @@ class Bus:
     traj.set_segment_intervals(segment_intervals)
     traj.green_light_time = self.green_light_time
     traj.red_light_time = self.red_light_time
+    traj.error = self.error
     return traj
 
   def segment_intervals(self):
@@ -265,6 +273,7 @@ class Bus:
       Trajectory.segment31,Trajectory.segment32,Trajectory.segment33,Trajectory.segment34,Trajectory.segment35,
       Trajectory.segment36,Trajectory.segment37,Trajectory.segment38,Trajectory.segment39).filter(Trajectory.route_name==self.route_name).filter(Trajectory.end_stop_id == self.end_stop_id)
     
+    trajs = [traj for traj in trajs if not any(map(lambda x: x != None and (x > MAX_SEGMENT_TIME or x < MIN_SEGMENT_TIME), traj[1:])) ]
     # TODO: before filtering based on similarity by segments, filter by time.
 
     similar_trajectories_by_time = self.filter_by_time(trajs)
@@ -273,6 +282,7 @@ class Bus:
       return {'similar': [], 'seconds_away': -1}
 
 
+    # this "backup" method was in use until 1/15/15  (Next 19 lines)
     # backoff: if there's tons of trajectories, make a maximum of N clusters (max_clusters)
     # if N clusters would make "my" cluster contain M trajectories and M < minimum_similar_trajectories
     #   then try again with N_2 as N_1 / 2
@@ -282,38 +292,62 @@ class Bus:
     # time_periods = early-morning-rush, late-morning-rush, late-morning, early-afternoon, mid-afternoon, early-evening-rush, late-evening-rush, late-evening, overnight
     # weather_variables: hot, cold, rainy, snowy
     # weekday_types: weekday, weekend
+    # max_clusters = 288
+    # minimum_similar_trajectories = 5
+    # similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, max_clusters)
+    # clusters_cnt = max_clusters
+    # while clusters_cnt > 1 and len(similar_trajectories) < minimum_similar_trajectories and len(similar_trajectories) > 0:
+    #   # logging.debug(' '.join(map(str, ["backing off, with cluster count", clusters_cnt, "too few similar trajectories", len(similar_trajectories), "from",len(similar_trajectories_by_time), "total"])))
+    #   clusters_cnt = clusters_cnt / 2
+    #   similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, clusters_cnt)
 
-    max_clusters = 288
-
-    similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, max_clusters)
-    clusters_cnt = max_clusters
-    while clusters_cnt > 1 and len(similar_trajectories) < minimum_similar_trajectories and len(similar_trajectories) > 0:
-      # logging.debug(' '.join(map(str, ["backing off, with cluster count", clusters_cnt, "too few similar trajectories", len(similar_trajectories), "from",len(similar_trajectories_by_time), "total"])))
-      clusters_cnt = clusters_cnt / 2
-      similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, clusters_cnt)
+    similar_trajectories = self.filter_by_segment_intervals(similar_trajectories_by_time, 144)
 
     if not similar_trajectories:
       return {'similar': [], 'seconds_away': -1}
+
 
     segment_intervals = self.segment_intervals()
     last_defined_segment_index = segment_intervals.index(None) if None in segment_intervals else len(segment_intervals)
     # average time-to-home-stop of the similar trajectories
     remaining_times_on_similar_trajectories = [sum(traj[last_defined_segment_index:]) for traj in similar_trajectories]
+
+    # two methods of determining the remaining time from the similar trajectories
+    # average the remaining times
     seconds_away = sum(remaining_times_on_similar_trajectories) / len(similar_trajectories)
+    # sum the medians for each remaining segment
+    # seconds_away =  sum([median(list(x)) for x in zip(*[traj[last_defined_segment_index:] for traj in similar_trajectories])])
+
+
+    # similar_trajectories_time_elapsed = [sum(traj[:last_defined_segment_index]) for traj in similar_trajectories]  #for sanity checking only
+    # logging.debug('remaining times ['+str(last_defined_segment_index)+' / '+str(seconds_away)+'] ('+self.previous_bus_positions[-1]["next_stop_name"]+'): ' + ', '.join([str(i) for i in remaining_times_on_similar_trajectories]))
+    # similar_trajectories_time_elapsed = [sum(traj[:last_defined_segment_index]) for traj in similar_trajectories]  #for sanity checking only
+    # logging.debug('elapsed times ['+str(last_defined_segment_index)+' / '+str(seconds_away)+'] ('+self.previous_bus_positions[-1]["next_stop_name"]+'): ' + ', '.join([str(i) for i in similar_trajectories_time_elapsed]))
+
+
     self.seconds_away = seconds_away
     return {'similar': similar_trajectories, 'seconds_away': seconds_away}
 
   def filter_by_time(self, trajs):
-    # ffkmodes = kmodes.FuzzyCentroidsKModes(5, alpha=1.8)
-    # ffkmodes.cluster(x)
-    # how do I represent trajectories based on time?
-
-    #I think kmodes is dumb. 
-    # time_trajs = [Trajectory.to_time_vector(traj.start_time) for traj in trajs]
-    # ffkmodes = kmodes.KModes(5)
-    # ffkmodes.cluster(time_trajs)
-    # traj.start_time.weekday()
-    return trajs
+    if self.start_time is None:
+      return trajs
+    def to_time_of_day(time):
+      if time.hour in [7,8,9]:
+        return 0
+      elif time.hour in [17,18,19]:
+        return 1
+      elif time.hour in [10,11,12,13,14,15,16]:
+        return 2
+      elif time.hour in  [20,21,22,23,0,1,2,3,4,5,6]:
+        return 3
+    is_a_weekend = self.start_time.weekday() in [5,6]
+    by_day = filter(lambda traj: (traj[0].weekday() in [5,6]) == is_a_weekend , trajs)
+    if not is_a_weekend:
+      time_of_day = to_time_of_day(self.start_time)
+      by_time_of_day = filter(lambda traj: to_time_of_day(traj[0]) == time_of_day, by_day)
+    else:
+      by_time_of_day = by_day
+    return by_time_of_day
 
   def filter_by_segment_intervals(self, trajs, number_of_clusters):
     truncate_trajs_to = trajs[0].index(None)
@@ -325,25 +359,19 @@ class Bus:
     #truncate to last defined point of this bus (i.e. where it is now) to find similar trajectories _so far_.
     # print('%(bus_name)s segment_intervals: ' % {'bus_name': self.number} + ', '.join(map(str, segment_intervals)))
     last_defined_segment_index = segment_intervals.index(None) if None in segment_intervals else len(segment_intervals)
-    truncated_trajectories = array([traj[:last_defined_segment_index] for traj in trajs]) #TODO: check for off-by-one here
-    centroids,_ = kmeans(truncated_trajectories, number_of_clusters) 
-    cluster_indices,_ = vq(truncated_trajectories,centroids)
-
-    truncated_segment_intervals = segment_intervals[:last_defined_segment_index]
-    my_cluster_index, _ = vq(array([truncated_segment_intervals]), centroids)
-    my_cluster_index = my_cluster_index[0]
-    # logging.debug("clusters: [%(sizes)s]" % 
-    #   {"sizes": ', '.join([str(cluster_indices.tolist().count(idx)) + ("*" if idx == my_cluster_index else "") for idx in set(sorted(cluster_indices))])})
-
-    # #find the suspiciously-large cluster... that might be the problem
-    large_cluster_indices = [idx for idx in set(sorted(cluster_indices)) if cluster_indices.tolist().count(idx) > 1000] 
-    for i, traj in enumerate(trajs):
-      if cluster_indices[i] in large_cluster_indices:
-        if rand() > 0.995:  #5 in 1000
-          logging.debug("large cluster member: " + str(traj))
-    
-    similar_trajectories = [traj for i, traj in enumerate(trajs) if cluster_indices[i] == my_cluster_index]
+    truncated_trajectories_list = [traj[:last_defined_segment_index] for traj in trajs]
+    truncated_trajectories_list = map(preprocess_trajectory, truncated_trajectories_list)
+    truncated_trajectories = array(truncated_trajectories_list)
+    truncated_segment_intervals = preprocess_trajectory(segment_intervals[:last_defined_segment_index])
+    if False: # knearestneighbors is mostly untested
+      similar_trajectory_indexes = find_similar_by_kmeans(truncated_trajectories, truncated_segment_intervals, number_of_clusters)
+    else:
+      similar_trajectory_indexes = find_similar_by_k_nearest_neighbors(truncated_trajectories, truncated_segment_intervals)
+    similar_trajectories = [trajs[i] for i in similar_trajectory_indexes]
     return similar_trajectories
+
+
+
 
   #called when a bus's lights are turned off, when there's not time to make it to the bus
   def too_late(self):
@@ -432,8 +460,70 @@ class Bus:
 
     return distance / float(time.seconds)
 
+def preprocess_trajectory(traj):
+  """Transform/preprocess a trajectory somehow for use in the kmeans algo"""
+  new_traj = list(traj)
+  # old = list(traj[0:len(traj)/3])
+  # medium = list(traj[len(traj)/3:(2*len(traj))/3])
+  # new = list(traj[(2*len(traj))/3:])
+
+  # # # in this, case multiply the trailing intervals to make them have more bearing on the output of the kmeans
+  # # new_traj = old + medium * 2 + new * 3
+
+  # new_traj = [(o / 3.0) for o in old] + [(o / 2.0) for o in old] + new
+  new_traj = traj[-8:]
+  # try scaling down the first few
+  return new_traj
+
+
+def find_similar_by_kmeans(truncated_trajectories, truncated_segment_intervals, number_of_clusters=144):
+  print("kmeansing")
+  centroids,_ = kmeans(truncated_trajectories, number_of_clusters) 
+  print("vqing")
+  cluster_indices,_ = vq(truncated_trajectories,centroids)
+  print("vqing again")
+  my_cluster_indices, _ = vq(array([truncated_segment_intervals]), centroids)
+  my_cluster_index = my_cluster_indices[0]
+  print("done with ML")
+  logging.debug("clusters: [%(sizes)s]" % 
+    {"sizes": ', '.join([str(cluster_indices.tolist().count(idx)) + ("*" if idx == my_cluster_index else "") for idx in set(sorted(cluster_indices))])})
+  
+  similar_trajectory_indexes = [i for i in range(0, len(cluster_indices)) if cluster_indices[i] == my_cluster_index]
+
+  # #find the suspiciously-large cluster... that might be the problem
+  # large_cluster_indices = [idx for idx in set(sorted(cluster_indices)) if cluster_indices.tolist().count(idx) > 1000] 
+  # for i, traj in enumerate(trajs):
+  #   if cluster_indices[i] in large_cluster_indices:
+  #     if rand() > 0.995:  #5 in 1000
+  #       logging.debug("large cluster member: " + str(traj))
+  return similar_trajectory_indexes
+
+def find_similar_by_k_nearest_neighbors(truncated_trajectories, truncated_segment_intervals, k=None):
+  if not k:
+    #k = int(len(truncated_trajectories)**0.5)  
+    k = 10
+  nbrs = NearestNeighbors(n_neighbors=k, algorithm='ball_tree').fit(truncated_trajectories)
+  distances, indices = nbrs.kneighbors(array(truncated_segment_intervals))
+  my_nearest_neighbors_indices = indices[0]
+  # indices is, for each point in the argument, a list of the index of its nearest neighbors
+  # in, presumably, what was sent to fit.    
+  return my_nearest_neighbors_indices
+
+
 def pairwise(iterable):
-    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-    a, b = tee(iterable)
-    next(b, None)
-    return izip(a, b)
+  "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+  a, b = tee(iterable)
+  next(b, None)
+  return izip(a, b)
+
+def median(array):
+  array_len = len(array)
+  if not array_len:
+    return 0
+  if array_len % 2 == 0:
+    idx = array_len / 2
+    idx2 = idx-1
+    return (array[idx] + array[idx2]) /2
+  else:
+    idx = array_len / 2
+    return array[idx]

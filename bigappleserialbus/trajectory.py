@@ -59,6 +59,7 @@ class Trajectory(Base):
   segment39 = Column(Integer, nullable=True)
   green_light_time = Column(DateTime, nullable=True)
   red_light_time = Column(DateTime, nullable=True)
+  error = Column(Integer, nullable=True)
 
   def __init__(self, route_name, stop_id, start_time):
     self.route_name = route_name

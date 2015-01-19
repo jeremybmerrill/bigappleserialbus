@@ -30,7 +30,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from busstop import Base
+from busstop import Base, TestCompleteException
 
 print("debug?", read_bustime_data_from_disk)
 
@@ -46,6 +46,8 @@ class BigAppleSerialBus:
     self.is_on_pi = is_on_pi()
     self.__init_db__()
     self.bus_stops = []
+    if read_bustime_data_from_disk:
+      self.session_errors = [] #only for testing :)
 
     if self.is_on_pi:
       import RPi.GPIO as GPIO
@@ -67,7 +69,7 @@ class BigAppleSerialBus:
       if not stop:
         stop = BusStop(busName, stop_id) #TODO: needs kwargs?
         self.session.add(stop)
-      stop.add_attributes(info["distance"], self.session)
+      stop.add_attributes(int(info["distance"]), self.session)
 
       self.bus_stops.append(stop)
       if self.is_on_pi:
@@ -78,10 +80,22 @@ class BigAppleSerialBus:
         self.lights[stop]['green'] = Light(info["greenPin"])
 
   def check_buses(self):
+    if not self.bus_stops:
+      print(self.session_errors)
+      print("buses: " + ','.join(map(lambda a: a[0] + ": " + str(len(a[1])), self.session_errors)))
+      print("sums: "  + ','.join(map(lambda a: str(sum( map(abs, a[1]) )), self.session_errors)))
+      print("means: " + ','.join(map(lambda a: str(sum( map(abs, a[1]) )/len(a[1])), self.session_errors)))
+
+      raise TestCompleteException("Test complete!")
     for stop in self.bus_stops:
       logging.debug("checking %(route_name)s/%(end_stop_id)s (%(count)i buses on route)" % 
         {'route_name': stop.route_name, 'count': len(stop.buses_on_route), 'end_stop_id': stop.stop_id })
-      trajectories = stop.check()
+      try:
+        trajectories = stop.check()
+      except TestCompleteException: #for testing only
+        self.session_errors.append((stop.route_name, stop.session_errors))
+        self.bus_stops.remove(stop)
+        continue
       for traj in [traj for traj in trajectories if traj]:
         logging.debug("writing trajectory:" + str(traj))
         if not read_bustime_data_from_disk: 
@@ -165,6 +179,7 @@ class BigAppleSerialBus:
         if not read_bustime_data_from_disk:
           time.sleep(5)
     else:
+      print(error)
       raise error
 
 if __name__ == "__main__":

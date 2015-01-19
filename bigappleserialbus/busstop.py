@@ -43,6 +43,10 @@ mta_api_key = open(apikey_path, 'r').read().strip()
 
 errors = {}
 
+class TestCompleteException(Exception):
+  pass 
+
+
 # store in database green-light-on times and  actual arrival times
 # to calculate avg error
 class BusStop(Base):
@@ -58,7 +62,7 @@ class BusStop(Base):
     self.errors = []
     self.buses_on_route = {}
     self.previous_stops = [] #TODO: get these from the db somehow
-
+    self.session_errors = []
 
   @orm.reconstructor
   def init_on_load(self):
@@ -69,11 +73,11 @@ class BusStop(Base):
       self.errors = map(float, self.errors_serialized.split(","))
     else:
       self.errors = []
-    files_for_this_stop = [f for f in os.listdir(os.path.join(os.path.dirname(__file__), '..', 'debugjson')) if f.split('.')[0] == self.route_name and f.split('.')[1] == self.stop_id]
-    self.test_json = [os.path.join(os.path.dirname(__file__), '..', 'debugjson', name) for name in sorted(files_for_this_stop, reverse=True)]
+    self.session_errors = []
 
   def add_attributes(self, stop_seconds_away, session):
     """Set non-persistant variables."""
+    print(stop_seconds_away, seconds_to_sidewalk )
     self.too_late_to_catch_the_bus = stop_seconds_away + seconds_to_sidewalk
     self.time_to_get_ready = stop_seconds_away + (time_to_get_ready + time_to_go) + seconds_to_sidewalk
     self.time_to_go = stop_seconds_away + time_to_go + seconds_to_sidewalk
@@ -81,6 +85,9 @@ class BusStop(Base):
     self.bus_is_near = False
     self.bus_is_imminent = False
     self.status_error = False
+    if read_bustime_data_from_disk:
+      files_for_this_stop = [f for f in os.listdir(os.path.join(os.path.dirname(__file__), '..', 'debugjson')) if f.split('.')[0] == self.route_name and f.split('.')[1] == self.stop_id]
+      self.test_json = [os.path.join(os.path.dirname(__file__), '..', 'debugjson', name) for name in sorted(files_for_this_stop, reverse=True)]
 
   def check(self):
     vehicle_activities, check_timestamp, success = self.get_locations()
@@ -137,6 +144,7 @@ class BusStop(Base):
             speeds_error = int(speeds_error.seconds)
 
           self.errors.append(similar_error)
+          self.session_errors.append(similar_error)
           avg_error = sum(self.errors) / len(self.errors)
           median_error = sorted(self.errors)[len(self.errors) / 2]
 
@@ -153,6 +161,7 @@ class BusStop(Base):
             {'avg_error': int(abs(avg_error)), 'name': self.route_name, 'med': int(abs(median_error)), 
             'avg_early_late': avg_early_late, 'median_early_late': median_early_late})
           # logging.debug( self.errors)
+          bus_past_stop.error = similar_error
         bus_trajectory = bus_past_stop.convert_to_trajectory(self.route_name, self.stop_id)
         print("appending trajectory in stop", bus_trajectory)
         trajectories.append(bus_trajectory) #calculate the right columns.
@@ -181,7 +190,7 @@ class BusStop(Base):
         # too close, won't make it.
         logging.debug(fail_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-            'now': check_timestamp[0:8], 'veh': vehicle_ref
+            'now': check_timestamp[11:19], 'veh': vehicle_ref
           })
         bus.too_late()
         continue
@@ -190,7 +199,7 @@ class BusStop(Base):
         bus.imminent()
         logging.debug(red_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-            'now': check_timestamp[0:8], 'veh': vehicle_ref
+            'now': check_timestamp[11:19], 'veh': vehicle_ref
           })
         if bus.first_projected_arrival == datetime.min:
           bus.first_projected_arrival = datetime.strptime(check_timestamp[0:19], "%Y-%m-%dT%H:%M:%S") + timedelta(seconds=similar_seconds_away)
@@ -201,7 +210,7 @@ class BusStop(Base):
       if similar_seconds_away < self.time_to_get_ready:
         logging.debug(green_notice + "bus %(name)s/%(veh)s is %(dist)fmi away, traveling at %(speed)f mph; computed to be %(mins)s away at %(now)s" % 
           {'name': self.route_name, 'dist': miles_away, 'speed': mph, 'mins': minutes_away, 
-            'now': check_timestamp[0:8], 'veh': vehicle_ref
+            'now': check_timestamp[11:19], 'veh': vehicle_ref
           })
         self.bus_is_near = True
         bus.near()
@@ -234,10 +243,11 @@ class BusStop(Base):
     resp = None
     if read_bustime_data_from_disk:
       try:
+        print(len(self.test_json))
         with open(self.test_json.pop(), 'r') as jsonfile:
           resp = json.loads(jsonfile.read())
       except IndexError:
-        raise IndexError("test finished successfully")
+        raise TestCompleteException("test finished successfully")
     else: 
       for i in xrange(0,4):
         try:
