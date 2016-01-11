@@ -83,8 +83,8 @@ class BigAppleSerialBus:
     if not self.bus_stops:
       print(self.session_errors)
       print("buses: " + ','.join(map(lambda a: a[0] + ": " + str(len(a[1])), self.session_errors)))
-      print("sums: "  + ','.join(map(lambda a: str(sum( map(abs, a[1]) )), self.session_errors)))
-      print("means: " + ','.join(map(lambda a: str(sum( map(abs, a[1]) )/len(a[1])), self.session_errors)))
+      print("sums: "  + ','.join(map(lambda a: str(sqrt(sum( map(lambda x: x**2, a[1])) )), self.session_errors)))
+      print("rmses: " + ','.join(map(lambda a: str(sqrt(sum( map(lambda x: x**2, a[1])) )/len(a[1])), self.session_errors)))
 
       raise TestCompleteException("Test complete!")
     for stop in self.bus_stops:

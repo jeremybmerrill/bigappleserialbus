@@ -11,6 +11,8 @@ uses OMG BIG DATA to predict when the bus is gonna come
 
 ![Picture of Big Apple Serial Bus](https://raw.githubusercontent.com/jeremybmerrill/bigappleserialbus/master/img/front-blurred-small.jpg)
 
+TODO: ask for stop two ahead of actual target stop, to get better arrival times (at actual target stop)
+
 install
 -------
 
