@@ -500,8 +500,9 @@ def find_similar_by_kmeans(truncated_trajectories, truncated_segment_intervals, 
 
 def find_similar_by_k_nearest_neighbors(truncated_trajectories, truncated_segment_intervals, k=None):
   if not k:
-    #k = int(len(truncated_trajectories)**0.5)  
-    k = max(10, len(truncated_trajectories))
+    #k = int(len(truncated_trajectories)**0.5)
+    k = 10
+  k = min(k, len(truncated_trajectories))
   nbrs = NearestNeighbors(n_neighbors=k, algorithm='ball_tree').fit(truncated_trajectories)
   distances, indices = nbrs.kneighbors(array(truncated_segment_intervals))
   my_nearest_neighbors_indices = indices[0]
