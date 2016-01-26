@@ -3,7 +3,7 @@ apikey.txt
 ledSpecs.txt
 buses.db
 txt/
-img/
+secretimg/
 
 #added automatically by github
 *.py[cod]
