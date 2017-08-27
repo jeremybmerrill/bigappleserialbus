@@ -62,7 +62,7 @@ g) Bus passes your stop.<br>
 
 Walking time is the sum of the time it takes to get out of your apartment to the street (constant per stop), and the amount of time it takes to get to any specific stop (which varies per stop, since some stops are farther from you than others).
 
-Bus arrival times are predicted using k-means clustering -- that is, BIG DATA ANALYTICS AND MACHINE LEARNING -- to based on previous, similar bus trajectories collected while the script runs. Inspired by [this academic paper](http://www.iis.sinica.edu.tw/~cclljj/publication/2012/12_GIS-HTTP.pdf).
+Bus arrival times are predicted using k-means clustering -- that is, BIG DATA ANALYTICS AND MACHINE LEARNING -- to based on previous, similar bus trajectories collected while the script runs. Inspired by [this academic paper](http://www.iis.sinica.edu.tw/~cclljj/publication/2012/12_GIS-HTTP.pdf). The way that dates/times are parameterized could probably be improved.
 
 All trajectories are used except those where any single segment took longer than 300 seconds, on the theory that a bus that waits 5 minutes at a stop has suffered some sort of exception (sick passenger? fight? breakdown?) that makes it unsuitable for prediction.
 
